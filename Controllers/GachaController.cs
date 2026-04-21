@@ -23,13 +23,13 @@ namespace MyMvcProject.Controllers
         [HttpGet("rewards")]
         public async Task<ActionResult<IEnumerable<RewardItem>>> GetRewards()
         {
-            return await _context.RewardItems.OrderBy(r => r.OrderIndex).ToListAsync();
+            return await _context.RewardItems.AsNoTracking().OrderBy(r => r.OrderIndex).ToListAsync();
         }
 
         [HttpGet("groups")]
         public async Task<ActionResult<IEnumerable<GroupSetting>>> GetGroups()
         {
-            return await _context.GroupSettings.OrderBy(g => g.Id).ToListAsync();
+            return await _context.GroupSettings.AsNoTracking().OrderBy(g => g.Id).ToListAsync();
         }
 
         [HttpPatch("groups/{id}/rate")]
@@ -200,7 +200,7 @@ namespace MyMvcProject.Controllers
         [HttpPost("roll")]
         public async Task<ActionResult<RewardItem>> RollGacha()
         {
-            var rewards = await _context.RewardItems.Where(r => r.Quantity > 0).ToListAsync();
+            var rewards = await _context.RewardItems.AsNoTracking().Where(r => r.Quantity > 0).ToListAsync();
             if (!rewards.Any()) return NotFound("Không có phần thưởng nào còn số lượng.");
 
             double totalWeight = rewards.Sum(r => r.DropRate);
@@ -222,7 +222,7 @@ namespace MyMvcProject.Controllers
         [HttpGet("cards")]
         public async Task<ActionResult<IEnumerable<RewardItem>>> GetCards()
         {
-            var rewards = await _context.RewardItems.Where(r => r.Quantity > 0).ToListAsync();
+            var rewards = await _context.RewardItems.AsNoTracking().Where(r => r.Quantity > 0).ToListAsync();
             if (rewards.Count == 0) return NotFound("Không có phần thưởng nào còn số lượng.");
 
             var selectedCards = new List<RewardItem>();

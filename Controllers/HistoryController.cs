@@ -41,6 +41,18 @@ namespace MyMvcProject.Controllers
 
             item.ReceivedAt = DateTime.Now;
             _context.RewardHistory.Add(item);
+            
+            // Auto-clean: Chỉ giữ 500 bản ghi lịch sử mới nhất để không tốn bộ nhớ DB (Neon Free limit 500MB)
+            var historyCount = await _context.RewardHistory.CountAsync();
+            if (historyCount > 500)
+            {
+                var oldRecords = await _context.RewardHistory
+                    .OrderBy(h => h.ReceivedAt)
+                    .Take(historyCount - 499)
+                    .ToListAsync();
+                _context.RewardHistory.RemoveRange(oldRecords);
+            }
+
             await _context.SaveChangesAsync();
             return Ok();
         }
