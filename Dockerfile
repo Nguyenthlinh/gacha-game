@@ -10,5 +10,5 @@ RUN dotnet publish "MyMvcProject.csproj" -c Release -o /app/publish /p:UseAppHos
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "MyMvcProject.dll"]
