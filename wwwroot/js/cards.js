@@ -165,9 +165,13 @@ function flipMainCard(index) {
     
     if (trueResultGroup.isVip) {
         cardBack.classList.add('vip-glow');
-        playSound('ting');
+        SoundEngine.cardReveal();
+        setTimeout(() => SoundEngine.vipWin(), 400);
+    } else if (trueResultGroup.id >= 3) {
+        SoundEngine.cardReveal();
+        setTimeout(() => SoundEngine.win(), 300);
     } else {
-        playSound('bup');
+        SoundEngine.cardFlip();
     }
 
     targetCard.classList.add('flipped', 'shake-on-flip');
@@ -186,9 +190,7 @@ function flipMainCard(index) {
     setTimeout(startRegretPhase, 1500);
 }
 
-function playSound(type) {
-    console.log(`[Audio] Phát âm thanh: ${type === 'ting' ? 'TINGGG ✨' : 'bụp 😅'}`);
-}
+
 
 function startRegretPhase() {
     const allCards = document.querySelectorAll('.game-card');
@@ -242,6 +244,7 @@ function startRegretPhase() {
             }
             
             card.classList.add('flipped', 'unselected');
+            SoundEngine.cardFlip();
         }, delay);
         delay += 600;
     });
@@ -261,6 +264,7 @@ function startRegretPhase() {
         
         regretText.classList.remove('hidden');
         document.getElementById('confirmCardPanel').classList.remove('hidden');
+        if (trueResultGroup.id <= 2) SoundEngine.regret();
     }, delay + 500);
 }
 

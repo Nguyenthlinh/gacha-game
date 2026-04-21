@@ -6,29 +6,128 @@
     <title>Vòng Quay Nhận Quà</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/game.css">
+    <style>
+        .gacha-wrap { position: relative; display: inline-block; }
+
+        .gacha-machine-new {
+            position: relative;
+            width: clamp(230px, 68vw, 320px);
+            height: clamp(230px, 68vw, 320px);
+            border-radius: 50%;
+        }
+        .gacha-ring {
+            position: absolute; inset: 0; border-radius: 50%;
+            background: conic-gradient(from 0deg, #fb7185, #facc15, #38bdf8, #a78bfa, #4ade80, #fb7185);
+            animation: ringRotate 3s linear infinite;
+        }
+        .gacha-inner {
+            position: absolute; inset: 6px; background: #fff;
+            border-radius: 50%; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.08);
+            padding: 15px;
+        }
+        @keyframes ringRotate { 100% { transform: rotate(360deg); } }
+        .machine-spinning .gacha-ring { animation-duration: 0.4s; }
+        .machine-spinning .gacha-inner { background: linear-gradient(135deg, #fffde7, #fff); }
+        .machine-reveal .gacha-ring { filter: drop-shadow(0 0 15px rgba(251,113,133,0.9)); animation-duration: 0.8s; }
+
+        .gacha-slot-text {
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
+            font-weight: 800; color: var(--text-color);
+            text-align: center; max-width: 90%; word-break: break-word;
+            transition: opacity 0.06s, transform 0.06s;
+        }
+        .idle-emoji { font-size: clamp(2.5rem, 10vw, 4rem); animation: bounceInner 1s ease-in-out infinite alternate; }
+        .idle-text { font-weight: 800; color: var(--text-color); font-size: clamp(0.9rem, 3vw, 1.1rem); }
+
+        .reward-name-pop { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; text-align: center; }
+        .reward-name-normal { font-size: clamp(1rem, 3vw, 1.3rem); font-weight: 900; color: var(--primary); }
+        .reward-name-rare { font-size: clamp(0.9rem, 2.5vw, 1.2rem); font-weight: 900; color: #f59e0b; }
+        .reward-name-vip { font-size: clamp(0.9rem, 2.5vw, 1.1rem); font-weight: 900; color: #ef4444; }
+
+        /* Sparkles */
+        .sparkle-ring { position: absolute; inset: -40px; pointer-events: none; }
+        .sparkle {
+            position: absolute; font-size: 1.4rem;
+            animation: sparklePop 1.2s ease-in-out infinite;
+        }
+        .sparkle:nth-child(1) { top: 0; left: 50%; animation-delay: 0s; }
+        .sparkle:nth-child(2) { top: 15%; right: 5%; animation-delay: 0.2s; }
+        .sparkle:nth-child(3) { top: 50%; right: -5%; animation-delay: 0.4s; }
+        .sparkle:nth-child(4) { bottom: 5%; right: 20%; animation-delay: 0.6s; }
+        .sparkle:nth-child(5) { bottom: 0; left: 35%; animation-delay: 0.8s; }
+        .sparkle:nth-child(6) { top: 50%; left: -5%; animation-delay: 1.0s; }
+        @keyframes sparklePop { 0%,100%{transform:scale(0.5);opacity:0.3} 50%{transform:scale(1.4);opacity:1} }
+
+        /* Big roll button */
+        .btn-gacha-big {
+            background: linear-gradient(135deg, #fb7185, #f43f5e);
+            border: none; border-radius: 50px;
+            font-size: clamp(1rem, 3.5vw, 1.5rem);
+            font-weight: 900; color: white; letter-spacing: 1px;
+            padding: clamp(10px,2vw,16px) clamp(24px,5vw,48px);
+            box-shadow: 0 8px 0 #be123c, 0 12px 20px rgba(251,113,133,0.4);
+            transition: all 0.1s; position: relative; overflow: hidden;
+        }
+        .btn-gacha-big:hover { background: linear-gradient(135deg, #f43f5e, #e11d48); transform: translateY(-2px); }
+        .btn-gacha-big:active { transform: translateY(6px); box-shadow: 0 2px 0 #be123c; }
+        .btn-gacha-big:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+        .btn-gacha-big::before {
+            content: ''; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: linear-gradient(transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
+            animation: btnShine 2.5s linear infinite;
+        }
+        @keyframes btnShine { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+
+        .confirm-panel { animation: popIn 0.4s ease; }
+    </style>
 </head>
 <body>
     <a href="index.html" class="btn btn-light m-3 position-absolute top-0 start-0 shadow-sm rounded-pill fw-bold text-primary">🏠 Trở Về</a>
 
-    <div class="container text-center d-flex flex-column justify-content-center align-items-center min-vh-100">
-        <h1 class="title-text mb-5">Hộp Quà Kỳ Diệu</h1>
-        
-        <div id="gachaMachine" class="gacha-machine mb-5">
-            <div id="gachaFx" class="gacha-inner-fx hidden"></div>
-            <div id="gachaItemFx" class="gacha-item-floating hidden">🎁</div>
-            <div id="rewardResult" class="reward-result hidden" style="z-index: 10;">
-                <h3 id="rewardName"></h3>
+    <div class="container text-center d-flex flex-column justify-content-center align-items-center min-vh-100 py-4">
+        <h1 class="title-text mb-4">✨ Hộp Quà Kỳ Diệu ✨</h1>
+
+        <div class="gacha-wrap mb-4">
+            <div id="gachaMachine" class="gacha-machine-new">
+                <div class="gacha-ring"></div>
+                <div class="gacha-inner">
+                    <div id="gachaFx" class="gacha-inner-fx hidden"></div>
+
+                    <div id="idleState" class="text-center">
+                        <div class="idle-emoji">🎁</div>
+                        <p class="idle-text mt-1 mb-0">Chuẩn bị<br>chưa?</p>
+                    </div>
+
+                    <div id="gachaSlot" class="hidden text-center w-100 px-2">
+                        <span id="gachaSlotText" class="gacha-slot-text">🎁</span>
+                    </div>
+
+                    <div id="rewardResult" class="reward-result hidden text-center px-2">
+                        <h3 id="rewardName" class="reward-name-pop mb-0"></h3>
+                    </div>
+                </div>
             </div>
-            <div id="idleState" style="z-index: 10;">
-                <h2 style="font-weight:800; color:var(--text-color);">Chuẩn bị<br>chưa?</h2>
+
+            <div id="sparkleRing" class="sparkle-ring hidden">
+                <div class="sparkle">⭐</div>
+                <div class="sparkle">✨</div>
+                <div class="sparkle">🌟</div>
+                <div class="sparkle">⭐</div>
+                <div class="sparkle">✨</div>
+                <div class="sparkle">🌟</div>
             </div>
         </div>
 
-        <button id="rollBtn" class="btn btn-bubbly btn-gacha px-5 py-3" onclick="rollGacha()">NHẬN QUÀ NGAY</button>
-        
-        <div id="confirmPanel" class="hidden mt-4">
-            <h3 class="mb-3" style="font-weight: 800; color: var(--text-color);">Nhận quà không?</h3>
-            <div class="d-flex justify-content-center gap-3">
+        <button id="rollBtn" class="btn-gacha-big mb-3" onclick="rollGacha()">
+            <span class="btn-text">🎰 NHẬN QUÀ NGAY</span>
+        </button>
+
+        <div id="confirmPanel" class="confirm-panel hidden mt-3">
+            <h3 class="mb-3 fw-bold" style="color: var(--text-color);">Nhận quà không ??</h3>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
                 <button class="btn btn-bubbly btn-success-bubbly px-4 py-2" onclick="acceptReward('Gacha')">✅ Nhận Quà</button>
                 <button class="btn btn-bubbly btn-danger-bubbly px-4 py-2" onclick="declineReward()">❌ Bỏ Qua</button>
             </div>
@@ -36,6 +135,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="js/sound.js"></script>
     <script src="js/gacha.js"></script>
 </body>
 </html>
