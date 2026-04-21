@@ -38,3 +38,4 @@ D:\Web\MyMvcProject\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.d
 D:\Web\MyMvcProject\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
 D:\Web\MyMvcProject\bin\Debug\net8.0\Npgsql.dll
 D:\Web\MyMvcProject\bin\Debug\net8.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
+D:\Web\MyMvcProject\obj\Debug\net8.0\MyMvcProject.sourcelink.json

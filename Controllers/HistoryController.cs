@@ -23,7 +23,7 @@ namespace MyMvcProject.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RewardHistoryItem>>> GetHistory()
         {
-            return await _context.RewardHistory.OrderByDescending(h => h.ReceivedAt).ToListAsync();
+            return await _context.RewardHistory.AsNoTracking().OrderByDescending(h => h.ReceivedAt).ToListAsync();
         }
 
         [HttpPost]
