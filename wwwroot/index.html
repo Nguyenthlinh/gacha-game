@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quà Tặng Học Sinh</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/game.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center title-text mb-4">✨  Nhận Quà Nào ✨</h1>
+        
+        <div class="d-flex justify-content-center gap-3 mb-4">
+            <a href="gacha.html" class="btn btn-bubbly btn-gacha">🥳 Chơi Vòng Quay</a>
+            <a href="cards.html" class="btn btn-bubbly btn-cards">😜 Chơi Lật Thẻ</a>
+        </div>
+
+        <!-- Nút quản lý quà bị thay thế bằng cục bong bóng ở rìa -->
+
+        <!-- History Panel on Main Screen -->
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="bubbly-panel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="text-success m-0" style="font-weight:800">📜 Lịch Sử Nhận Quà</h3>
+                        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="clearHistory()">Xóa Toàn Bộ Lịch Sử</button>
+                    </div>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Thời gian</th>
+                                    <th>Nguồn</th>
+                                    <th>Phần quà</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyList">
+                                <!-- Lịch sử sẽ load vào đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Sidebar (Offcanvas) -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="adminSidebar" style="width: 1400px; max-width: 95vw;">
+        <div class="offcanvas-header bg-light border-bottom">
+            <h5 class="offcanvas-title fw-bold text-primary fs-3">⚙️ Quản Lý Danh Sách Quà</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body" style="background-color: var(--bg-color);">
+            <div class="row h-100">
+                <div class="col-md-3 mb-4">
+                    <div class="bubbly-panel h-100 border-0 shadow-sm">
+                        <h4 class="mb-3 text-primary" style="font-weight:800">Nhập Danh Sách</h4>
+                        <p class="text-muted small">Mỗi dòng 1 món. Cú pháp: <code>Tên Quà : Nhóm (1-5) : Số Lượng : Tỉ Lệ</code><br>(VD: <code>Gấu bông : 4 : 5 : 20</code>. Mặc định Nhóm=1, SL=10, Tỉ lệ=10%).</p>
+                        <textarea id="bulkGifts" class="form-control mb-3" rows="15" placeholder="Gấu bông : 4 : 5 : 20&#10;Bút chì : 1 : 10&#10;Kẹo mút"></textarea>
+                        <button class="btn btn-bubbly btn-success-bubbly w-100 mb-2" onclick="addBulkRewards()">Thêm Vào Danh Sách</button>
+                        <button class="btn btn-bubbly btn-danger-bubbly w-100" onclick="clearRewards()">Xóa Toàn Bộ Quà Cũ</button>
+                    </div>
+                </div>
+                
+                <div class="col-md-9 mb-4">
+                    <div class="bubbly-panel h-100 border-0 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h4 class="text-primary m-0" style="font-weight:800">Quà Đang Có Nhỉ?</h4>
+                        </div>
+                        <p class="text-muted small">Bạn có thể <b>kéo thả</b> các hàng xuyên suốt các nhóm để thay đổi. <b>Tích chọn</b> để xóa hoặc di chuyển nhiều món cùng lúc.</p>
+                        
+                        <!-- Bulk Actions Toolbar -->
+                        <div id="bulkActionsToolbar" class="d-flex align-items-center bg-light p-2 rounded shadow-sm mb-3 border d-none">
+                            <span class="fw-bold text-primary me-3">Đã chọn: <span id="selectedCount">0</span></span>
+                            <button class="btn btn-sm btn-danger rounded-pill px-3 me-2 fw-bold" onclick="bulkDelete()">🗑️ Xóa</button>
+                            <div class="input-group input-group-sm" style="width: auto;">
+                                <select class="form-select" id="bulkMoveGroup" style="border-radius: 20px 0 0 20px;">
+                                    <option value="1">1. Cơ bản</option>
+                                    <option value="2">2. Tạm ổn</option>
+                                    <option value="3">3. Khá ngon</option>
+                                    <option value="4">4. Xịn xò</option>
+                                    <option value="5">5. VIP Pro</option>
+                                </select>
+                                <button class="btn btn-primary fw-bold" style="border-radius: 0 20px 20px 0;" onclick="bulkMove()">➡️ Chuyển</button>
+                            </div>
+                        </div>
+                        
+                    <div id="groupsContainer" class="mt-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <!-- 5 nhóm sẽ được gen bằng JS -->
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cục Bong Bóng Quản Lý (Floating Bubble) -->
+    <div class="floating-admin-wrapper" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" title="Quản Lý Quà">
+        <div class="floating-admin-btn">🪸</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

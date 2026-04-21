@@ -1,0 +1,283 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap');
+
+:root {
+    --bg-color: #f0fdf4;
+    --primary: #fb7185;
+    --secondary: #38bdf8;
+    --accent: #facc15;
+    --text-color: #334155;
+    --card-bg: #ffffff;
+}
+
+body {
+    background-color: var(--bg-color);
+    background-image: url('../img/hinh_nen.jpg');
+    background-size: cover;
+    color: var(--text-color);
+    font-family: 'Baloo 2', cursive;
+    overflow-x: hidden;
+}
+
+.title-text {
+    font-weight: 800;
+    color: var(--primary);
+    text-shadow: 2px 2px 0px #fff, 4px 4px 0px rgba(0,0,0,0.1);
+    font-size: 3.5rem;
+}
+
+.bubbly-panel {
+    background: var(--card-bg);
+    border-radius: 25px;
+    border: 4px solid #e2e8f0;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    padding: 2rem;
+}
+
+/* Buttons */
+.btn-bubbly {
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 1.2rem;
+    padding: 10px 30px;
+    border: none;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.1);
+    transition: all 0.1s;
+    color: white;
+}
+.btn-bubbly:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 rgba(0,0,0,0.1);
+}
+
+.btn-gacha {
+    background-color: var(--primary);
+}
+.btn-gacha:hover { background-color: #f43f5e; color: white;}
+
+.btn-cards {
+    background-color: var(--secondary);
+}
+.btn-cards:hover { background-color: #0ea5e9; color: white;}
+
+.btn-success-bubbly {
+    background-color: #22c55e;
+}
+.btn-success-bubbly:hover { background-color: #16a34a; color: white;}
+
+.btn-danger-bubbly {
+    background-color: #ef4444;
+}
+.btn-danger-bubbly:hover { background-color: #dc2626; color: white;}
+
+/* Gacha Machine Animation */
+.gacha-machine {
+    width: 300px;
+    height: 300px;
+    background: #fff;
+    border: 8px solid var(--secondary);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.1), 0 10px 20px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+    padding: 20px;
+}
+
+.gacha-inner-fx {
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    background: conic-gradient(from 0deg, transparent 0deg, var(--accent) 90deg, transparent 180deg, var(--secondary) 270deg, transparent 360deg);
+    border-radius: 50%;
+    animation: spinFx 0.5s linear infinite;
+    opacity: 0.4;
+}
+
+@keyframes spinFx {
+    100% { transform: rotate(360deg); }
+}
+
+.gacha-item-floating {
+    position: absolute;
+    font-size: 5rem;
+    animation: bounceInner 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes bounceInner {
+    0% { transform: scale(0.8) translateY(-10px); }
+    100% { transform: scale(1.2) translateY(10px); }
+}
+
+.reward-result h3 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    text-shadow: 2px 2px 0px #fff;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    80% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.hidden {
+    display: none !important;
+}
+
+.shake {
+    animation: shake 0.5s ease-in-out infinite;
+}
+
+@keyframes shake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    75% { transform: rotate(5deg); }
+}
+
+/* Cards Grid Layout (3 columns, 2 rows) */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    justify-content: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+@media (max-width: 576px) {
+    .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Card Flipping */
+.game-card {
+    width: 100%;
+    height: 200px;
+    perspective: 1000px;
+    cursor: pointer;
+}
+
+.card-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.game-card.flipped .card-inner {
+    transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    backface-visibility: hidden;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+}
+
+.card-front {
+    background-color: var(--accent);
+    border: 4px solid #fff;
+}
+.card-front::after {
+    content: '?';
+    font-size: 60px;
+    font-weight: 900;
+    color: #fff;
+}
+
+.card-back {
+    background-color: #fff;
+    border: 4px solid var(--primary);
+    transform: rotateY(180deg);
+    padding: 10px;
+    text-align: center;
+}
+
+.card-back p {
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.game-card.unselected {
+    opacity: 0.6;
+    filter: grayscale(80%);
+}
+
+.rare-pulse {
+    animation: rarePulse 1.5s infinite;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+}
+
+@keyframes rarePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.is-rare .card-back {
+    box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.3);
+}
+
+.shake-on-flip {
+    animation: shake 0.3s ease-in-out;
+}
+
+.vip-glow {
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.6);
+    border: 2px solid var(--accent);
+}
+
+/* Floating Bubble Admin Button */
+.floating-admin-wrapper {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1050;
+    animation: floatBubble 3s ease-in-out infinite;
+}
+
+.floating-admin-btn {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    box-shadow: 0 10px 25px rgba(251, 113, 133, 0.4), inset 0px -5px 10px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.2rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 5px solid #fff;
+}
+
+.floating-admin-btn:hover {
+    transform: scale(1.15) rotate(15deg);
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+}
+
+.floating-admin-btn:active {
+    transform: scale(0.9);
+}
+
+@keyframes floatBubble {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0px); }
+}

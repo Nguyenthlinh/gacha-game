@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vòng Quay Nhận Quà</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+    <a href="index.html" class="btn btn-light m-3 position-absolute top-0 start-0 shadow-sm rounded-pill fw-bold text-primary">🏠 Trở Về</a>
+
+    <div class="container text-center d-flex flex-column justify-content-center align-items-center min-vh-100">
+        <h1 class="title-text mb-5">Hộp Quà Kỳ Diệu</h1>
+        
+        <div id="gachaMachine" class="gacha-machine mb-5">
+            <div id="gachaFx" class="gacha-inner-fx hidden"></div>
+            <div id="gachaItemFx" class="gacha-item-floating hidden">🎁</div>
+            <div id="rewardResult" class="reward-result hidden" style="z-index: 10;">
+                <h3 id="rewardName"></h3>
+            </div>
+            <div id="idleState" style="z-index: 10;">
+                <h2 style="font-weight:800; color:var(--text-color);">Chuẩn bị<br>chưa?</h2>
+            </div>
+        </div>
+
+        <button id="rollBtn" class="btn btn-bubbly btn-gacha px-5 py-3" style="font-size:2rem;" onclick="rollGacha()">NHẬN QUÀ NGAY</button>
+        
+        <div id="confirmPanel" class="hidden mt-4">
+            <h3 class="mb-3" style="font-weight: 800; color: var(--text-color);">Lưu vào lịch sử không?</h3>
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-bubbly btn-success-bubbly px-4 py-2" onclick="acceptReward('Gacha')">✅ Nhận Quà</button>
+                <button class="btn btn-bubbly btn-danger-bubbly px-4 py-2" onclick="declineReward()">❌ Bỏ Qua</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="js/gacha.js"></script>
+</body>
+</html>
