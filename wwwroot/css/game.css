@@ -22,7 +22,8 @@ body {
     font-weight: 800;
     color: var(--primary);
     text-shadow: 2px 2px 0px #fff, 4px 4px 0px rgba(0,0,0,0.1);
-    font-size: 3.5rem;
+    font-size: clamp(1.6rem, 6vw, 3.5rem);
+    line-height: 1.2;
 }
 
 .bubbly-panel {
@@ -30,19 +31,20 @@ body {
     border-radius: 25px;
     border: 4px solid #e2e8f0;
     box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-    padding: 2rem;
+    padding: clamp(1rem, 3vw, 2rem);
 }
 
 /* Buttons */
 .btn-bubbly {
     border-radius: 50px;
     font-weight: 800;
-    font-size: 1.2rem;
-    padding: 10px 30px;
+    font-size: clamp(0.85rem, 2.5vw, 1.2rem);
+    padding: clamp(7px, 1.5vw, 10px) clamp(16px, 4vw, 30px);
     border: none;
     box-shadow: 0 6px 0 rgba(0,0,0,0.1);
     transition: all 0.1s;
     color: white;
+    white-space: nowrap;
 }
 .btn-bubbly:active {
     transform: translateY(6px);
@@ -71,8 +73,8 @@ body {
 
 /* Gacha Machine Animation */
 .gacha-machine {
-    width: 300px;
-    height: 300px;
+    width: clamp(200px, 65vw, 300px);
+    height: clamp(200px, 65vw, 300px);
     background: #fff;
     border: 8px solid var(--secondary);
     border-radius: 50%;
@@ -101,7 +103,7 @@ body {
 
 .gacha-item-floating {
     position: absolute;
-    font-size: 5rem;
+    font-size: clamp(2.5rem, 12vw, 5rem);
     animation: bounceInner 0.3s ease-in-out infinite alternate;
 }
 
@@ -111,11 +113,12 @@ body {
 }
 
 .reward-result h3 {
-    font-size: 2.5rem;
+    font-size: clamp(1.4rem, 5vw, 2.5rem);
     font-weight: 800;
     color: var(--primary);
     animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     text-shadow: 2px 2px 0px #fff;
+    padding: 0 10px;
 }
 
 @keyframes popIn {
@@ -157,7 +160,7 @@ body {
 /* Card Flipping */
 .game-card {
     width: 100%;
-    height: 200px;
+    height: clamp(130px, 28vw, 200px);
     perspective: 1000px;
     cursor: pointer;
 }
@@ -193,7 +196,7 @@ body {
 }
 .card-front::after {
     content: '?';
-    font-size: 60px;
+    font-size: clamp(30px, 10vw, 60px);
     font-weight: 900;
     color: #fff;
 }
@@ -280,4 +283,71 @@ body {
     0% { transform: translateY(0px); }
     50% { transform: translateY(-15px); }
     100% { transform: translateY(0px); }
+}
+
+/* ==========================================
+   RESPONSIVE MEDIA QUERIES
+   ========================================== */
+
+/* Tất cả màn hình nhỏ hơn tablet (< 768px) */
+@media (max-width: 767px) {
+    body { font-size: 15px; }
+
+    .floating-admin-btn {
+        width: 58px;
+        height: 58px;
+        font-size: 1.8rem;
+        border-width: 4px;
+    }
+
+    .floating-admin-wrapper {
+        bottom: 20px;
+        right: 20px;
+    }
+
+    /* Gacha page button */
+    #rollBtn {
+        font-size: clamp(1rem, 4vw, 1.5rem) !important;
+        padding: 12px 28px !important;
+    }
+
+    /* Cards page result text */
+    #resultText {
+        font-size: clamp(1.2rem, 5vw, 2rem) !important;
+    }
+
+    /* History table: ẩn cột Nguồn trên mobile */
+    .table-hide-mobile { display: none; }
+
+    /* Càc thao tác nút trên trang chủ */
+    .game-btn-group {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .game-btn-group a {
+        text-align: center;
+    }
+
+    /* Cải thiện khoảng cách nhỏ */
+    .container.mt-5 { margin-top: 1.5rem !important; }
+    #cardsBoard { padding: 0 5px; }
+}
+
+/* Thiết bị rất nhỏ (< 400px) */
+@media (max-width: 400px) {
+    .card-back p, .card-back .fw-bold {
+        font-size: 0.85rem !important;
+    }
+    .card-back .badge {
+        font-size: 0.65rem !important;
+    }
+    .btn-bubbly {
+        font-size: 0.8rem;
+        padding: 7px 14px;
+    }
+    .floating-admin-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
 }

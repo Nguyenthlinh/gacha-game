@@ -122,7 +122,7 @@ function loadCards() {
 
     for (let i = 0; i < 6; i++) {
         const colDiv = document.createElement('div');
-        colDiv.className = 'col-4 col-sm-4 col-md-4'; // 3 columns on all screens
+        colDiv.className = 'col-6 col-sm-4 col-md-4'; // 2 cột ở mobile, 3 cột ở tablet+
 
         colDiv.innerHTML = `
             <div class="game-card" data-index="${i}" onclick="flipMainCard(${i})">
