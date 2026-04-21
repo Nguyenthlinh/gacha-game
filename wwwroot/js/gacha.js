@@ -29,7 +29,7 @@ async function rollGacha() {
     sparkles.classList.remove('hidden');
     machine.classList.add('machine-spinning');
     rollBtn.disabled = true;
-    rollBtn.querySelector('.btn-text').innerText = '🎰 ĐANG QUAY...';
+    rollBtn.querySelector('.btn-text').innerText = '😵‍💫 ĐANG QUAY...';
 
     SoundEngine.spinUp();
 
@@ -143,7 +143,7 @@ function resetMachine() {
     const btn = document.getElementById('rollBtn');
     btn.disabled = false;
     btn.classList.remove('hidden');
-    btn.querySelector('.btn-text').innerText = '🎰 QUAY LẦN NỮA';
+    btn.querySelector('.btn-text').innerText = 'QUAY LẦN NỮA';
     isRolling = false;
     loadRewardsList(); // Cập nhật lại danh sách
 }

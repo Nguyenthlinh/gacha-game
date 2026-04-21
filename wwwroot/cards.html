@@ -10,6 +10,16 @@
 <body>
     <a href="index.html" class="btn btn-light m-3 position-absolute top-0 start-0 shadow-sm rounded-pill fw-bold text-primary">🏠 Trở Về</a>
 
+    <!-- Nút Bật/Tắt Nhạc Nền -->
+    <button id="bgMusicBtn" onclick="toggleBgMusic()" title="Bật/Tắt nhạc nền"
+        style="position:fixed;top:16px;right:16px;z-index:1060;
+               background:rgba(255,255,255,0.85);border:none;border-radius:50%;
+               width:46px;height:46px;font-size:1.4rem;cursor:pointer;
+               box-shadow:0 3px 10px rgba(0,0,0,0.15);backdrop-filter:blur(6px);
+               transition:transform 0.2s,opacity 0.2s;">
+        🎵
+    </button>
+
     <div class="container text-center min-vh-100 d-flex flex-column justify-content-center">
         <h1 class="title-text mb-4" id="mainTitle">Chọn 1 Lá Bài May Mắn!</h1>
         
@@ -25,9 +35,9 @@
             <button class="btn btn-bubbly btn-cards btn-lg px-5 mb-3" id="resetBtn" onclick="loadCards()" style="display: none; font-size:1.5rem;">Chơi Lại Nào!</button>
             
             <div id="confirmCardPanel" class="hidden">
-                <h3 class="mb-3" style="font-weight: 800; color: var(--text-color);">Lưu vào lịch sử không?</h3>
+                <h3 class="mb-3" style="font-weight: 800; color: var(--text-color);">Nhận quà hong?</h3>
                 <div class="d-flex justify-content-center gap-3">
-                    <button class="btn btn-bubbly btn-success-bubbly px-4 py-2" onclick="acceptCardReward()">✅ Nhận Quà</button>
+                    <button class="btn btn-bubbly btn-success-bubbly px-4 py-2" onclick="acceptCardReward()">🥰 Nhận quà hoi</button>
                     <button class="btn btn-bubbly btn-danger-bubbly px-4 py-2" onclick="declineCardReward()">❌ Bỏ Qua</button>
                 </div>
             </div>
@@ -37,5 +47,26 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="js/sound.js"></script>
     <script src="js/cards.js?v=3"></script>
+    <script>
+        // Auto-start nhạc nền sau lần đầu tiên chạm vào màn hình
+        let bgStarted = false;
+        function tryStartBg() {
+            if (!bgStarted) {
+                bgStarted = true;
+                BgMusic.start();
+                document.getElementById('bgMusicBtn').innerText = '🎵';
+            }
+        }
+        document.addEventListener('click', tryStartBg, { once: true });
+        document.addEventListener('touchstart', tryStartBg, { once: true });
+
+        function toggleBgMusic() {
+            const btn = document.getElementById('bgMusicBtn');
+            bgStarted = true;
+            const playing = BgMusic.toggle();
+            btn.innerText = playing ? '🎵' : '🔇';
+            btn.style.opacity = playing ? '1' : '0.5';
+        }
+    </script>
 </body>
 </html>

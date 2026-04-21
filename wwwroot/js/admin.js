@@ -91,118 +91,148 @@ async function bulkMove() {
     loadRewards();
 }
 
+// Màu tab cho từng nhóm
+const TAB_COLORS = ['#6c757d','#22c55e','#38bdf8','#6366f1','#ef4444'];
+const TAB_NAMES_SHORT = ['Cơ Bản','Tạm Ổn','Khá Ngon','Xịn Xò','VIP 👑'];
+
+function buildItemRow(r) {
+    const isVip  = r.groupId >= 5;
+    const isRare = r.groupId >= 4;
+    const nameColor = isVip ? 'text-danger' : isRare ? 'text-warning' : 'text-primary';
+    const isChecked = selectedRewardIds.has(r.id) ? 'checked' : '';
+    const outOfStock = r.quantity <= 0 ? '<span class="badge bg-secondary ms-1" style="font-size:0.6rem">Hết</span>' : '';
+    return `
+        <div class="d-flex align-items-center gap-2 py-2 px-2 rounded-2 mb-1 border bg-white reward-row" data-id="${r.id}" style="${r.quantity<=0?'opacity:0.6':''}">
+            <input class="form-check-input flex-shrink-0 mt-0" type="checkbox"
+                onchange="toggleSelection(${r.id}, this.checked)" ${isChecked}>
+            <span class="drag-handle text-muted flex-shrink-0" style="cursor:grab;font-size:1rem;">&#9776;</span>
+            <span class="flex-grow-1 fw-bold ${nameColor}"
+                style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.name}">
+                ${r.name}${outOfStock}
+            </span>
+            <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <input type="number" min="0" step="1"
+                    class="form-control form-control-sm text-center p-1"
+                    style="width:54px;border-radius:8px;" value="${r.quantity}"
+                    onchange="updateQuantity(${r.id}, this.value)"
+                    title="Số lượng">
+                <span class="text-muted" style="font-size:0.75rem;">cái</span>
+            </div>
+            <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <input type="number" min="0" step="1"
+                    class="form-control form-control-sm text-center p-1 ${isRare?'text-danger':'text-primary'}"
+                    style="width:54px;border-radius:8px;" value="${r.dropRate}"
+                    onchange="updateRate(${r.id}, this.value)"
+                    title="Tỉ lệ rớt">
+                <span class="text-muted" style="font-size:0.75rem;">%</span>
+            </div>
+            <button class="btn btn-sm btn-outline-danger rounded-pill px-2 flex-shrink-0"
+                onclick="deleteReward(${r.id})" title="Xóa" style="font-size:1rem;line-height:1;">&times;</button>
+        </div>`;
+}
+
 async function loadRewards() {
     await loadGroups();
     try {
         const res = await fetch('/api/gacha/rewards');
         const rewards = await res.json();
-        
         const container = document.getElementById('groupsContainer');
-        container.innerHTML = '';
-        
-        GROUPS_INFO.forEach(g => {
-            let groupRewards;
-            if (g.id === 1) {
-                groupRewards = rewards.filter(r => r.groupId === 1 || r.groupId < 1 || r.groupId > 5);
-            } else {
-                groupRewards = rewards.filter(r => r.groupId === g.id);
-            }
-            
-            let gridSpan = g.id === 5 ? 'style="grid-column: span 2;"' : '';
-            
-            let html = `
-                <div class="border rounded-3 shadow-sm overflow-hidden bg-white d-flex flex-column" ${gridSpan}>
-                    <div class="p-2 ${g.bg} fw-bold fs-5 text-center shadow-sm d-flex justify-content-between align-items-center">
-                        <span>${g.name}</span>
-                        <div class="d-flex align-items-center bg-white rounded p-1" style="width:145px; border: 1px solid rgba(0,0,0,0.1);">
-                            <span class="text-dark fw-normal me-1" style="font-size:0.75rem; white-space:nowrap;">Tỉ lệ game:</span>
-                            <input type="number" class="form-control form-control-sm text-center fw-bold p-0 text-primary" 
-                                style="width: 45px; height: 22px; border: none; background: #e9ecef; border-radius:4px;" 
-                                value="${g.probability}" 
-                                onchange="updateGroupProb(${g.id}, this.value)">
-                            <span class="text-dark ms-1" style="font-size:0.8rem;">%</span>
+
+        // ---- Build Tab Nav ----
+        let tabNav = `<ul class="nav nav-pills mb-2 gap-1 flex-wrap" id="groupTabs">`;
+        GROUPS_INFO.forEach((g, idx) => {
+            const cnt = rewards.filter(r => r.groupId === g.id || (g.id === 1 && (r.groupId < 1 || r.groupId > 5))).length;
+            const active = idx === 0 ? 'active' : '';
+            const color = TAB_COLORS[idx];
+            tabNav += `
+                <li class="nav-item">
+                    <button class="nav-link fw-bold ${active}" id="tab-btn-${g.id}"
+                        data-bs-toggle="pill" data-bs-target="#tab-pane-${g.id}"
+                        style="${active ? `background:${color};color:#fff;border:2px solid ${color}` :
+                                         `background:transparent;color:${color};border:2px solid ${color}`};border-radius:20px;font-size:0.85rem;padding:5px 14px;">
+                        ${TAB_NAMES_SHORT[idx]}
+                        <span class="badge rounded-pill ms-1" style="background:rgba(0,0,0,0.15);">${cnt}</span>
+                    </button>
+                </li>`;
+        });
+        tabNav += `</ul>`;
+
+        // ---- Build Tab Panes ----
+        let tabPanes = `<div class="tab-content">`;
+        GROUPS_INFO.forEach((g, idx) => {
+            const groupRewards = rewards.filter(r =>
+                g.id === 1 ? (r.groupId === 1 || r.groupId < 1 || r.groupId > 5) : r.groupId === g.id
+            );
+            const active = idx === 0 ? 'show active' : '';
+            const color = TAB_COLORS[idx];
+
+            // Build group items
+            let itemsHtml = groupRewards.length === 0
+                ? `<div class="text-center text-muted py-4 rounded-3 border border-dashed my-2">
+                    <div style="font-size:1.5rem;">&#x1F381;</div>
+                    <div class="small">Chưa có quà nào trong nhóm này</div>
+                   </div>`
+                : groupRewards.map(r => buildItemRow(r)).join('');
+
+            tabPanes += `
+                <div class="tab-pane fade ${active}" id="tab-pane-${g.id}" role="tabpanel">
+                    <div class="border rounded-3 overflow-hidden">
+                        <!-- Group Header -->
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2"
+                            style="background:${color};color:#fff;">
+                            <span class="fw-bold fs-6">${g.name} &nbsp;&middot;&nbsp;
+                                <span class="fw-normal opacity-75" style="font-size:0.85rem;">${groupRewards.length} món</span>
+                            </span>
+                            <div class="d-flex align-items-center gap-1 bg-white bg-opacity-25 rounded-pill px-2 py-1">
+                                <span style="font-size:0.75rem;opacity:0.9;">Tỉ lệ nhóm:</span>
+                                <input type="number" min="0" max="100"
+                                    class="text-center fw-bold border-0 p-0"
+                                    style="width:42px;background:transparent;color:#fff;font-size:0.9rem;"
+                                    value="${g.probability}"
+                                    onchange="updateGroupProb(${g.id}, this.value)">
+                                <span style="font-size:0.8rem;">%</span>
+                            </div>
+                        </div>
+
+                        <!-- Column headers -->
+                        <div class="d-flex align-items-center gap-2 px-3 py-1 bg-light"
+                            style="font-size:0.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.04em;">
+                            <span style="width:16px;"></span>
+                            <span style="width:16px;"></span>
+                            <span class="flex-grow-1">Tên quà</span>
+                            <span style="width:54px;text-align:center;">Số lượng</span>
+                            <span style="width:10px;"></span>
+                            <span style="width:54px;text-align:center;">Tỉ lệ rớt</span>
+                            <span style="width:10px;"></span>
+                            <span style="width:28px;"></span>
+                        </div>
+
+                        <!-- Item list -->
+                        <div id="group-list-${g.id}" data-group-id="${g.id}"
+                            class="px-2 py-2" style="min-height:60px;">
+                            ${itemsHtml}
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 30px;"></th>
-                                    <th style="width: 30px;"></th>
-                                    <th>Tên Quà</th>
-                                    <th>Số Lượng</th>
-                                    <th>Tỉ lệ rớt</th>
-                                    <th class="text-end">Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody id="group-list-${g.id}" data-group-id="${g.id}" style="min-height: 50px; display: table-row-group;">
-            `;
-            
-            if (groupRewards.length === 0) {
-                 html += `<tr class="empty-placeholder"><td colspan="6" class="text-center text-muted small py-3">Kéo thả quà vào đây</td></tr>`;
-            }
-
-            groupRewards.forEach(r => {
-                const isRare = r.groupId >= 4;
-                const rareHtml = isRare ? `<span class="badge bg-danger ms-2 rare-pulse">VIP</span>` : '';
-                const textColor = isRare ? 'text-danger' : 'text-primary';
-                const isChecked = selectedRewardIds.has(r.id) ? 'checked' : '';
-                
-                html += `
-                    <tr data-id="${r.id}" class="${isRare ? 'table-warning' : ''} ${r.quantity <= 0 ? 'opacity-50' : ''}">
-                        <td><input class="form-check-input" type="checkbox" onchange="toggleSelection(${r.id}, this.checked)" ${isChecked}></td>
-                        <td class="drag-handle text-muted" style="cursor: grab;">☰</td>
-                        <td class="fw-bold fs-5 ${textColor}">
-                            ${r.name} 
-                            ${rareHtml}
-                            ${r.quantity <= 0 ? '<span class="badge bg-secondary ms-2">Hết quà</span>' : ''}
-                        </td>
-                        <td>
-                            <input type="number" class="form-control form-control-sm text-center fw-bold" 
-                                style="width: 65px; border-radius: 10px;" 
-                                value="${r.quantity}" 
-                                onchange="updateQuantity(${r.id}, this.value)">
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <button class="btn btn-sm btn-outline-secondary border-0 fs-5 fw-bold px-2" onclick="updateRate(${r.id}, ${r.dropRate - 1})">-</button>
-                                <input type="number" class="form-control form-control-sm text-center fw-bold ${isRare ? 'text-danger border-danger' : 'text-dark'} mx-1" 
-                                    style="width: 65px; border-radius: 10px;" 
-                                    value="${r.dropRate}" 
-                                    onchange="updateRate(${r.id}, this.value)">
-                                <span class="fw-bold text-muted ms-1">%</span>
-                                <button class="btn btn-sm btn-outline-secondary border-0 fs-5 fw-bold px-2" onclick="updateRate(${r.id}, ${r.dropRate + 1})">+</button>
-                            </div>
-                        </td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-danger rounded-pill px-3" onclick="deleteReward(${r.id})">Xóa</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            
-            html += `</tbody></table></div></div>`;
-            container.innerHTML += html;
+                </div>`;
         });
-        
+        tabPanes += `</div>`;
+
+        container.innerHTML = tabNav + tabPanes;
         updateBulkToolbar();
 
-        if(window.Sortable) {
+        // ---- Init Sortable ----
+        if (window.Sortable) {
             GROUPS_INFO.forEach(g => {
-                const tbody = document.getElementById(`group-list-${g.id}`);
-                Sortable.create(tbody, {
+                const listEl = document.getElementById(`group-list-${g.id}`);
+                Sortable.create(listEl, {
                     group: 'shared',
                     handle: '.drag-handle',
                     animation: 150,
-                    filter: '.empty-placeholder',
-                    onEnd: async function (evt) {
-                        const itemEl = evt.item;
-                        const itemId = parseInt(itemEl.getAttribute('data-id'));
+                    onEnd: async function(evt) {
+                        const itemId = parseInt(evt.item.getAttribute('data-id'));
                         if (isNaN(itemId)) return;
-
                         const newGroupId = parseInt(evt.to.getAttribute('data-group-id'));
                         const oldGroupId = parseInt(evt.from.getAttribute('data-group-id'));
-                        
                         if (newGroupId !== oldGroupId) {
                             await fetch(`/api/gacha/rewards/${itemId}/group`, {
                                 method: 'PATCH',
@@ -210,19 +240,17 @@ async function loadRewards() {
                                 body: JSON.stringify(newGroupId)
                             });
                         }
-                        
                         const allIds = [];
-                        GROUPS_INFO.forEach(gInfo => {
-                            const rows = document.getElementById(`group-list-${gInfo.id}`).querySelectorAll('tr[data-id]');
-                            rows.forEach(r => allIds.push(parseInt(r.getAttribute('data-id'))));
+                        GROUPS_INFO.forEach(gi => {
+                            document.getElementById(`group-list-${gi.id}`)
+                                .querySelectorAll('[data-id]')
+                                .forEach(el => allIds.push(parseInt(el.getAttribute('data-id'))));
                         });
-                        
                         await fetch('/api/gacha/rewards/reorder', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(allIds)
                         });
-                        
                         loadRewards();
                     }
                 });
