@@ -153,7 +153,7 @@ async function acceptReward(source) {
         await fetch('/api/history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ RewardName: currentRewardName, Source: source })
+            body: JSON.stringify({ rewardName: currentRewardName, source: source })
         });
     } catch(e) { console.error(e); }
     resetMachine();

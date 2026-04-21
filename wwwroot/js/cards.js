@@ -273,7 +273,7 @@ async function acceptCardReward() {
         await fetch('/api/history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ RewardName: trueResultItem, Source: 'Lật thẻ' })
+            body: JSON.stringify({ rewardName: trueResultItem, source: 'Lật thẻ' })
         });
         
         // Cập nhật lại dbRewards để giảm số lượng ở frontend

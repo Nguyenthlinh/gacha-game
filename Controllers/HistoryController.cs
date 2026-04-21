@@ -39,7 +39,7 @@ namespace MyMvcProject.Controllers
                 reward.Quantity--;
             }
 
-            item.ReceivedAt = DateTime.Now;
+            item.ReceivedAt = DateTime.UtcNow;
             _context.RewardHistory.Add(item);
             
             // Auto-clean: Chỉ giữ 500 bản ghi lịch sử mới nhất để không tốn bộ nhớ DB (Neon Free limit 500MB)
