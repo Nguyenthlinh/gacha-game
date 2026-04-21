@@ -1,0 +1,21 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+## Database files (do NOT commit sensitive data)
+*.db
+*.db-shm
+*.db-wal
+
+## Logs
+logs/
+*.log
+
+## Build output
+publish/
+
+## Environment specific
+appsettings.Development.json
