@@ -76,27 +76,46 @@ async function addBulkStudents() {
 }
 
 async function updateStudentStickers(id, amount) {
+    const student = allStudents.find(x => x.id === id);
+    if (!student) return;
+
+    // 1. Cập nhật UI tức thì (Optimistic)
+    const oldStickers = student.stickers;
+    student.stickers += amount;
+    if (student.stickers < 0) student.stickers = 0;
+
+    // Tìm và cập nhật con số hiển thị trong DOM ngay lập tức
+    const studentCards = document.querySelectorAll('#studentListContainer .p-3');
+    studentCards.forEach(card => {
+        if (card.querySelector('h5').innerText === student.name) {
+            const span = card.querySelector('.fs-2');
+            span.innerText = student.stickers;
+            
+            // Cập nhật badges mốc ngay lập tức nếu cần (Re-render card này)
+            // Để đơn giản và chính xác, ta chỉ cần gọi render lại card này hoặc render toàn bộ list nếu máy mạnh
+            // Ở đây tôi chọn render lại toàn bộ list nhưng KHÔNG fetch lại từ server để giữ tốc độ
+            renderStudentAdmin();
+        }
+    });
+
+    // 2. Kiểm tra mốc quà ngay lập tức
+    if (oldStickers < 10 && student.stickers >= 10) showStudentRedeemPrompt(student, 10, "Quà Nhỏ");
+    else if (oldStickers < 20 && student.stickers >= 20) showStudentRedeemPrompt(student, 20, "Quà Lớn");
+    else if (oldStickers < 30 && student.stickers >= 30) showStudentRedeemPrompt(student, 30, "Quà VIP");
+
+    // 3. Gửi lên server ngầm
     try {
-        const res = await fetch(`/api/student/${id}/stickers`, {
+        await fetch(`/api/student/${id}/stickers`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: amount
         });
-        if (res.ok) {
-            const updated = await res.json();
-            const old = allStudents.find(x => x.id === id);
-            
-            if (old.stickers < 10 && updated.stickers >= 10) {
-                showStudentRedeemPrompt(updated, 10, "Quà Nhỏ");
-            } else if (old.stickers < 20 && updated.stickers >= 20) {
-                showStudentRedeemPrompt(updated, 20, "Quà Lớn");
-            } else if (old.stickers < 30 && updated.stickers >= 30) {
-                showStudentRedeemPrompt(updated, 30, "Quà VIP");
-            }
-            
-            loadStudentAdmin();
-        }
-    } catch(e) { console.error(e); }
+        // Không cần loadStudentAdmin() ở đây nữa vì ta đã tin tưởng local state
+    } catch(e) { 
+        console.error("Lỗi đồng bộ:", e);
+        // Nếu lỗi thật thì mới nên reload lại để khớp data
+        loadStudentAdmin();
+    }
 }
 
 function promptRedeem(id, cost, prizeName) {

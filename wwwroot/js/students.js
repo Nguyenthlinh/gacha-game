@@ -51,27 +51,31 @@ function renderStudents() {
 // ... existing addStudent ...
 
 async function updateStickers(id, amount) {
+    const student = students.find(x => x.id === id);
+    if (!student) return;
+
+    // 1. Cập nhật UI tức thì
+    const oldStickers = student.stickers;
+    student.stickers += amount;
+    if (student.stickers < 0) student.stickers = 0;
+    renderStudents(); // Vẽ lại local cực nhanh
+
+    // 2. Kiểm tra mốc ngay
+    if (oldStickers < 10 && student.stickers >= 10) showRedeemPrompt(student, 10, "Quà Nhỏ");
+    else if (oldStickers < 20 && student.stickers >= 20) showRedeemPrompt(student, 20, "Quà Lớn");
+    else if (oldStickers < 30 && student.stickers >= 30) showRedeemPrompt(student, 30, "Quà VIP");
+
+    // 3. Gửi server ngầm
     try {
-        const res = await fetch(`/api/student/${id}/stickers`, {
+        await fetch(`/api/student/${id}/stickers`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: amount
         });
-        if (res.ok) {
-            const updated = await res.json();
-            const old = students.find(x => x.id === id);
-            
-            if (old.stickers < 10 && updated.stickers >= 10) {
-                showRedeemPrompt(updated, 10, "Quà Nhỏ");
-            } else if (old.stickers < 20 && updated.stickers >= 20) {
-                showRedeemPrompt(updated, 20, "Quà Lớn");
-            } else if (old.stickers < 30 && updated.stickers >= 30) {
-                showRedeemPrompt(updated, 30, "Quà VIP");
-            }
-            
-            loadStudents();
-        }
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+        console.error(e); 
+        loadStudents(); // Sync lại nếu lỗi
+    }
 }
 
 function manualRedeem(id, cost, prizeName) {
