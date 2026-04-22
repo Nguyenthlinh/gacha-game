@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hộp Quà Bí Ẩn</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/game.css?v=2">
+    <style>
+        :root {
+            --mystery-primary: #6a11cb;
+            --mystery-secondary: #2575fc;
+        }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+        }
+        .mystery-title {
+            background: linear-gradient(to right, #fff, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 2rem;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .card-front {
+            background: linear-gradient(45deg, #6a11cb, #2575fc) !important;
+        }
+        .mystery-badge {
+            font-size: 1.5rem !important;
+            padding: 10px 20px !important;
+            border-radius: 50px !important;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white !important;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .group-1 { background-color: #94a3b8 !important; } /* Cơ bản */
+        .group-2 { background-color: #22c55e !important; } /* Tạm ổn */
+        .group-3 { background-color: #3b82f6 !important; } /* Khá ngon */
+        .group-4 { background-color: #a855f7 !important; } /* Xịn xò */
+        .group-5 { background-color: #f59e0b !important; } /* VIP */
+    </style>
+</head>
+<body>
+    <a href="index.html" class="btn btn-light m-3 position-absolute top-0 start-0 shadow-sm rounded-pill fw-bold text-primary">🏠 Trở Về</a>
+
+    <button id="bgMusicBtn" onclick="toggleBgMusic()" title="Bật/Tắt nhạc nền"
+        style="position:fixed;top:16px;right:16px;z-index:1060;
+               background:rgba(255,255,255,0.85);border:none;border-radius:50%;
+               width:46px;height:46px;font-size:1.4rem;cursor:pointer;
+               box-shadow:0 3px 10px rgba(0,0,0,0.15);backdrop-filter:blur(6px);
+               transition:transform 0.2s,opacity 0.2s;">
+        🎵
+    </button>
+
+    <div class="container text-center min-vh-100 d-flex flex-column justify-content-center py-5">
+        <h1 class="mystery-title" id="mainTitle">Hộp Quà Bí Ẩn 🎁</h1>
+        
+        <div id="resultText" class="mb-4 hidden" style="animation: popIn 0.5s;">
+            <h2 class="text-white" style="font-weight: 800;">Bạn đã trúng gói:</h2>
+            <div id="groupReveal" class="mt-2"></div>
+        </div>
+
+        <div id="itemReveal" class="mb-4 hidden" style="animation: bounceIn 0.6s;">
+            <h1 class="text-warning" style="font-size: 3rem; font-weight: 900; text-shadow: 0 0 20px rgba(255,215,0,0.5);">🎁 ĐÃ NHẬN QUÀ!</h1>
+            <p class="text-white fs-4">Hãy gặp giáo viên để xem món quà bí ẩn của bạn là gì nhé! 🕵️‍♂️</p>
+        </div>
+
+        <div class="row g-4 justify-content-center mx-auto w-100" id="cardsBoard" style="max-width: 800px;">
+            <!-- 6 lá bài -->
+        </div>
+
+        <div class="mt-5">
+            <button class="btn btn-bubbly btn-cards btn-lg px-5 mb-3" id="resetBtn" onclick="loadCards()" style="display: none; font-size:1.5rem; background: var(--mystery-primary);">Chơi Lại!</button>
+            
+            <div id="confirmCardPanel" class="hidden">
+                <h3 class="mb-3 text-white" style="font-weight: 800;">Mở xem là món gì nào?</h3>
+                <div class="d-flex justify-content-center gap-3">
+                    <button class="btn btn-bubbly btn-success-bubbly px-5 py-2 fs-4" onclick="acceptCardReward()">✨ MỞ QUÀ ✨</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="js/sound.js"></script>
+    <script src="js/mystery-cards.js?v=1"></script>
+    <script>
+        let bgStarted = false;
+        function tryStartBg() {
+            if (!bgStarted) {
+                bgStarted = true;
+                BgMusic.start();
+                document.getElementById('bgMusicBtn').innerText = '🎵';
+            }
+        }
+        document.addEventListener('click', tryStartBg, { once: true });
+        document.addEventListener('touchstart', tryStartBg, { once: true });
+
+        function toggleBgMusic() {
+            const btn = document.getElementById('bgMusicBtn');
+            bgStarted = true;
+            const playing = BgMusic.toggle();
+            btn.innerText = playing ? '🎵' : '🔇';
+            btn.style.opacity = playing ? '1' : '0.5';
+        }
+    </script>
+</body>
+</html>
