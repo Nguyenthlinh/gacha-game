@@ -109,12 +109,12 @@ function flipMysteryCard(index) {
     // CHỈ HIỆN TÊN NHÓM
     cardBack.innerHTML = `
         <div class="d-flex flex-column align-items-center justify-content-center w-100 h-100 p-2">
-            <span class="badge ${trueResultGroup.class} mystery-badge">🎁 ${trueResultGroup.name}</span>
+            <div class="badge ${trueResultGroup.class} mystery-badge">🎁 ${trueResultGroup.name}</div>
         </div>
     `;
     
     if (trueResultGroup.isVip) {
-        cardBack.classList.add('vip-glow');
+        cardBack.classList.add('vip-card-back', 'vip-glow');
         SoundEngine.cardReveal();
         setTimeout(() => SoundEngine.vipWin(), 400);
     } else if (trueResultGroup.id >= 3) {
@@ -151,12 +151,16 @@ function startRegretPhase() {
     }
     remainingIndices = remainingIndices.sort(() => Math.random() - 0.5);
 
-    // Chim mồi: Chỉ duy nhất 1 thẻ VIP Pro Max mồi nhử
-    let otherGroups = [GROUPS[3], GROUPS[2], GROUPS[1], GROUPS[0]];
-    let fakeGroupResults = [GROUPS[4]]; // 1 thẻ VIP duy nhất
-    for(let i=0; i<4; i++) {
-        fakeGroupResults.push(otherGroups[Math.floor(Math.random() * otherGroups.length)]);
-    }
+    // Chim mồi: Đảm bảo 5 thẻ còn lại là 5 nhóm khác nhau (không trùng lặp)
+    // Bao gồm 1 thẻ VIP và 4 thẻ từ 4 nhóm còn lại
+    let fakeGroupResults = [
+        GROUPS[4], // VIP
+        GROUPS[3], // Xịn xò
+        GROUPS[2], // Khá ngon
+        GROUPS[1], // Tạm ổn
+        GROUPS[0]  // Cơ bản
+    ];
+    // Xáo trộn danh sách này
     fakeGroupResults = fakeGroupResults.sort(() => Math.random() - 0.5);
 
     let delay = 0;
@@ -168,11 +172,11 @@ function startRegretPhase() {
             
             cardBack.innerHTML = `
                 <div class="d-flex flex-column align-items-center justify-content-center w-100 h-100 p-1">
-                    <span class="badge ${fakeGroup.class} mystery-badge" style="font-size: 1rem !important; padding: 8px 12px !important;">🎁 ${fakeGroup.name}</span>
+                    <div class="badge ${fakeGroup.class} mystery-badge" style="font-size: 0.8rem !important; padding: 6px 10px !important;">🎁 ${fakeGroup.name}</div>
                 </div>
             `;
             
-            if (fakeGroup.isVip) cardBack.classList.add('vip-glow');
+            if (fakeGroup.isVip) cardBack.classList.add('vip-card-back', 'vip-glow');
             card.classList.add('flipped', 'unselected');
             SoundEngine.cardFlip();
         }, delay);
@@ -196,6 +200,8 @@ function startRegretPhase() {
 }
 
 async function acceptCardReward() {
+    // Không cần lưu lịch sử và giảm số lượng cho chế độ Hộp Quà Bí Ẩn
+    /*
     try {
         await fetch('/api/history', {
             method: 'POST',
@@ -205,6 +211,7 @@ async function acceptCardReward() {
         const itemInDb = dbRewards.find(r => r.name === trueResultItem);
         if (itemInDb && itemInDb.quantity > 0) itemInDb.quantity--;
     } catch(e) { console.error(e); }
+    */
 
     SoundEngine.win();
     confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
