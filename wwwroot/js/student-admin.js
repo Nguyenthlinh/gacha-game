@@ -153,3 +153,11 @@ async function editStudentStickers(id, currentVal) {
         } catch(e) { console.error(e); }
     }
 }
+
+async function deleteStudentAdmin(id) {
+    if (!confirm("Xóa học sinh này?")) return;
+    try {
+        const res = await fetch(`/api/student/${id}`, { method: 'DELETE' });
+        if (res.ok) loadStudentAdmin();
+    } catch(e) { console.error(e); }
+}
