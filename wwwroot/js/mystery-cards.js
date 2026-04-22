@@ -71,7 +71,7 @@ function loadCards() {
     document.getElementById('resetBtn').style.display = 'none';
     document.getElementById('confirmCardPanel').classList.add('hidden');
     document.getElementById('resultText').classList.add('hidden');
-    document.getElementById('itemReveal').classList.add('hidden');
+    document.getElementById('teaseText').classList.add('hidden');
     document.getElementById('mainTitle').style.display = 'block';
 
     const board = document.getElementById('cardsBoard');
@@ -137,8 +137,11 @@ function flipMysteryCard(index) {
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
     }
 
-    // Bắt đầu giai đoạn 2: Lật các thẻ còn lại
-    setTimeout(startRegretPhase, 1500);
+    // Bắt đầu giai đoạn 2: Lật các thẻ còn lại và TỰ ĐỘNG nhận quà
+    setTimeout(() => {
+        acceptCardReward(); // Tự động nhận quà
+        startRegretPhase();
+    }, 1500);
 }
 
 function startRegretPhase() {
@@ -149,8 +152,13 @@ function startRegretPhase() {
     }
     remainingIndices = remainingIndices.sort(() => Math.random() - 0.5);
 
-    // Mồi nhử (Fake results)
-    let fakeGroupResults = [GROUPS[4], GROUPS[4], GROUPS[3], GROUPS[2], GROUPS[1]].sort(() => Math.random() - 0.5);
+    // Chim mồi: Chỉ duy nhất 1 thẻ VIP Pro Max mồi nhử
+    let otherGroups = [GROUPS[3], GROUPS[2], GROUPS[1], GROUPS[0]];
+    let fakeGroupResults = [GROUPS[4]]; // 1 thẻ VIP duy nhất
+    for(let i=0; i<4; i++) {
+        fakeGroupResults.push(otherGroups[Math.floor(Math.random() * otherGroups.length)]);
+    }
+    fakeGroupResults = fakeGroupResults.sort(() => Math.random() - 0.5);
 
     let delay = 0;
     remainingIndices.forEach((cardIndex, i) => {
@@ -173,8 +181,18 @@ function startRegretPhase() {
     });
 
     setTimeout(() => {
-        document.getElementById('confirmCardPanel').classList.remove('hidden');
-        if (trueResultGroup.id <= 2) SoundEngine.regret();
+        const teaseText = document.getElementById('teaseText');
+        if (trueResultGroup.id <= 2) {
+            teaseText.innerText = "Chọn thẻ kia là ngon rồi 🤦‍♂️";
+            teaseText.style.color = "#ff4757";
+            SoundEngine.regret();
+        } else {
+            const msgs = ["Đỉnh quá! 🎉", "Hên ghê! 😎"];
+            teaseText.innerText = msgs[Math.floor(Math.random() * msgs.length)];
+            teaseText.style.color = "#2ed573";
+        }
+        teaseText.classList.remove('hidden');
+        document.getElementById('resetBtn').style.display = 'inline-block';
     }, delay + 500);
 }
 
@@ -192,16 +210,7 @@ async function acceptCardReward() {
     SoundEngine.win();
     confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
 
-    document.getElementById('confirmCardPanel').classList.add('hidden');
     document.getElementById('resultText').classList.add('hidden');
-    
-    const itemReveal = document.getElementById('itemReveal');
-    itemReveal.classList.remove('hidden');
-
-    document.getElementById('resetBtn').style.display = 'inline-block';
 }
 
-function declineCardReward() {
-    document.getElementById('confirmCardPanel').classList.add('hidden');
-    document.getElementById('resetBtn').style.display = 'inline-block';
-}
+
