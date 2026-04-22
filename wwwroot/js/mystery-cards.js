@@ -69,7 +69,6 @@ function loadCards() {
     trueResultGroup = null;
     
     document.getElementById('resetBtn').style.display = 'none';
-    document.getElementById('confirmCardPanel').classList.add('hidden');
     document.getElementById('resultText').classList.add('hidden');
     document.getElementById('teaseText').classList.add('hidden');
     document.getElementById('mainTitle').style.display = 'block';
