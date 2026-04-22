@@ -351,3 +351,31 @@ body {
         font-size: 1.5rem;
     }
 }
+/* Interactive Milestones */
+.clickable-milestone {
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    user-select: none;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    position: relative;
+}
+.clickable-milestone:hover {
+    transform: scale(1.1) translateY(-3px) !important;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.3) !important;
+    filter: brightness(1.15);
+}
+.clickable-milestone:active {
+    transform: scale(0.9) translateY(0) !important;
+}
+
+
+.fw-900 { font-weight: 900 !important; }
+
+/* Custom Colors for Student Sidebar */
+#studentSidebar .text-warning {
+    color: rgb(119 101 47) !important;
+}
+#studentSidebar .text-primary {
+    color: rgb(13 43 88) !important;
+}
+

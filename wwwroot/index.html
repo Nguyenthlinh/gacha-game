@@ -32,7 +32,7 @@
                         <table class="table table-hover align-middle">
                             <thead class="table-light">
                                 <tr>
-                            <th>Thời gian</th>
+                                    <th>Thời gian</th>
                                     <th class="table-hide-mobile">Nguồn</th>
                                     <th>Phần quà</th>
                                 </tr>
@@ -49,9 +49,12 @@
 
     <!-- Admin Sidebar (Offcanvas) -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="adminSidebar" style="width: 1400px; max-width: 95vw;">
-        <div class="offcanvas-header bg-light border-bottom">
-            <h5 class="offcanvas-title fw-bold text-primary fs-3">⚙️ Quản Lý Danh Sách Quà</h5>
-            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <div class="offcanvas-header bg-light border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="offcanvas-title fw-bold text-primary fs-3">⚙️ Quản Lý Danh Sách Quà </h5>
+            <div class="d-flex gap-2">
+                <!-- <a href="students.html" class="btn btn-outline-primary fw-bold rounded-pill">⭐ Quản Lý Stickers</a> -->
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
         </div>
         <div class="offcanvas-body" style="background-color: var(--bg-color);">
             <div class="row h-100">
@@ -97,12 +100,67 @@
         </div>
     </div>
 
-    <!-- Cục Bong Bóng Quản Lý (Floating Bubble) -->
+    <!-- Cục Bong Bóng Quản Lý Sticker (Dành riêng cho Học Sinh) -->
+    <div class="floating-admin-wrapper" data-bs-toggle="offcanvas" data-bs-target="#studentSidebar" style="bottom: 115px; text-decoration: none;" title="Quản Lý Stickers">
+        <div class="floating-admin-btn" style="background: linear-gradient(135deg, #facc15, #f59e0b);">⭐</div>
+    </div>
+
+    <!-- Cục Bong Bóng Quản Lý Quà (Floating Bubble) -->
     <div class="floating-admin-wrapper" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" title="Quản Lý Quà">
         <div class="floating-admin-btn">🪸</div>
     </div>
 
+    <!-- Sidebar Quản Lý Học Sinh (Offcanvas) -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="studentSidebar" style="width: 1400px; max-width: 95vw;">
+        <div class="offcanvas-header bg-light border-bottom">
+            <h5 class="offcanvas-title fw-bold text-warning fs-3">⭐ Quản Lý Stickers Học Sinh</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body" style="background-color: #f8fafc;">
+            <div class="row h-100">
+                <!-- Bên trái: Nhập liệu -->
+                <div class="col-md-3 mb-4">
+                    <div class="bubbly-panel h-100 border-0 shadow-sm">
+                        <h4 class="mb-3 text-warning" style="font-weight:800">Nhập Danh Sách</h4>
+                        <p class="text-muted small">Mỗi tên một dòng. Ví dụ:<br>Nguyễn Văn A<br>Trần Thị B</p>
+                        <textarea id="bulkStudentsInput" class="form-control mb-3" rows="15" placeholder="Nguyễn Văn A&#10;Trần Thị B&#10;Lê Văn C"></textarea>
+                        <button class="btn btn-bubbly btn-success-bubbly w-100 mb-2" onclick="addBulkStudents()">Lưu Danh Sách</button>
+                        <p class="text-center text-muted small mt-2">Tích lũy:<br><span class="fw-900 text-warning">10 🎁</span> đổi quà nhỏ <br> <span class="fw-900 text-warning">20 🏆</span> đổi quà lớn <br> <span class="fw-900 text-warning">30 👑</span> đổi quà vip !</p>
+                    </div>
+                </div>
+                
+                <!-- Bên phải: Danh sách học sinh -->
+                <div class="col-md-9 mb-4">
+                    <div class="bubbly-panel h-100 border-0 shadow-sm" style="overflow-y: auto;">
+                        <h4 class="text-primary mb-3" style="font-weight:800">Danh Sách Lớp</h4>
+                        <div class="row g-3" id="studentListContainer">
+                            <!-- JS sẽ render học sinh vào đây -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal thông báo đổi quà (Dùng chung cho Index) -->
+    <div class="modal fade" id="redeemModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-body text-center p-5">
+                    <div style="font-size: 4rem;">🎉</div>
+                    <h2 class="fw-bold mb-3" id="redeemTitle">Chúc mừng!</h2>
+                    <p class="fs-5 mb-4" id="redeemMsg"></p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <button class="btn btn-lg btn-success-bubbly px-4" id="btnRedeemAction">Đổi ngay!</button>
+                        <button class="btn btn-lg btn-light border px-4" data-bs-dismiss="modal">Tích tiếp</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/admin.js"></script>
+    <script src="js/student-admin.js"></script>
 </body>
 </html>

@@ -18,6 +18,16 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.EnsureCreated();
     
+    // Ép tạo bảng Students nếu chưa có (vì EnsureCreated không update schema)
+    string createTableSql = @"
+        CREATE TABLE IF NOT EXISTS ""Students"" (
+            ""Id"" SERIAL PRIMARY KEY,
+            ""Name"" TEXT NOT NULL,
+            ""Stickers"" INTEGER NOT NULL DEFAULT 0,
+            ""ClassName"" TEXT NOT NULL DEFAULT 'Lớp 1'
+        );";
+    context.Database.ExecuteSqlRaw(createTableSql);
+    
     if (!context.RewardItems.Any())
     {
         context.RewardItems.AddRange(
