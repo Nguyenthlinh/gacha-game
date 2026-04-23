@@ -36,6 +36,10 @@ using (var scope = app.Services.CreateScope())
                     ""ClassroomId"" INTEGER DEFAULT 0
                 );
             ");
+            // MIGRATE: Thêm cột ClassroomId nếu bảng cũ chưa có (bảng cũ dùng ClassName TEXT)
+            context.Database.ExecuteSqlRaw(@"
+                ALTER TABLE ""Students"" ADD COLUMN IF NOT EXISTS ""ClassroomId"" INTEGER DEFAULT 0;
+            ");
         } finally {
             context.Database.CloseConnection();
         }
