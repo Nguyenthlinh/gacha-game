@@ -8,6 +8,8 @@ async function loadStudents() {
         const res = await fetch('/api/student');
         if (res.ok) {
             students = await res.json();
+            // Sắp xếp A-Z
+            students.sort((a, b) => a.name.localeCompare(b.name, 'vi', { sensitivity: 'base' }));
             renderStudents();
         }
     } catch(e) { console.error(e); }
@@ -17,18 +19,28 @@ function renderStudents() {
     const list = document.getElementById('studentList');
     list.innerHTML = '';
 
-    students.forEach(s => {
+    const colors = [
+        { border: '#38bdf8', bg: '#f0f9ff' },
+        { border: '#4ade80', bg: '#f0fdf4' },
+        { border: '#fb7185', bg: '#fff1f2' },
+        { border: '#a855f7', bg: '#faf5ff' },
+        { border: '#fb923c', bg: '#fff7ed' }
+    ];
+
+    students.forEach((s, index) => {
         const col = document.createElement('div');
         col.className = 'col-md-6 col-lg-4';
+        
+        const color = colors[index % colors.length];
         
         const milestone10 = s.stickers >= 10 ? `<span class="badge-milestone bg-milestone-10 clickable-milestone" onclick="manualRedeem(${s.id}, 10, 'Quà Nhỏ')">🎁 Đổi 10</span>` : '';
         const milestone20 = s.stickers >= 20 ? `<span class="badge-milestone bg-milestone-20 clickable-milestone" onclick="manualRedeem(${s.id}, 20, 'Quà Lớn')">🏆 Đổi 20</span>` : '';
         const milestone30 = s.stickers >= 30 ? `<span class="badge-milestone bg-danger text-white clickable-milestone" style="background: linear-gradient(45deg, #f1c40f, #d35400) !important;" onclick="manualRedeem(${s.id}, 30, 'Quà VIP')">👑 Đổi 30</span>` : '';
 
         col.innerHTML = `
-            <div class="student-card d-flex align-items-center justify-content-between">
+            <div class="student-card d-flex align-items-center justify-content-between" style="border-left: 8px solid ${color.border} !important; background-color: ${color.bg} !important;">
                 <div>
-                    <h4 class="mb-1 fw-bold">${s.name}</h4>
+                    <h4 class="mb-1 fw-bold" style="color: ${color.border}">${s.name}</h4>
                     <div class="d-flex gap-1">${milestone10} ${milestone20} ${milestone30}</div>
                 </div>
                 <div class="text-end">

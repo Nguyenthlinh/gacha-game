@@ -44,6 +44,24 @@ namespace MyMvcProject.Controllers
             return Ok();
         }
 
+        [HttpDelete("bulk")]
+        public async Task<IActionResult> BulkDelete([FromBody] List<int> ids)
+        {
+            if (ids == null || !ids.Any()) return BadRequest();
+            var toDelete = _context.Students.Where(s => ids.Contains(s.Id));
+            _context.Students.RemoveRange(toDelete);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpDelete("clear-all")]
+        public async Task<IActionResult> ClearAll()
+        {
+            _context.Students.RemoveRange(_context.Students);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
         [HttpPatch("{id}/stickers")]
         public async Task<IActionResult> UpdateStickers(int id, [FromBody] int amount)
         {
