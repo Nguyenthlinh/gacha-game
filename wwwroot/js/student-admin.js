@@ -233,14 +233,14 @@ function toggleStudentSelection(id) {
     }
     // Cập nhật số lượng trước
     updateSelectedCount();
-    // Sau đó mới vẽ lại để giữ trạng thái checkbox
     renderStudentAdmin();
 }
 
 function updateSelectedCount() {
-    const countEl = document.getElementById('selectedCount');
+    const countEl = document.getElementById('selectedCountSidebar');
     if (countEl) {
         countEl.innerText = selectedIds.size;
+        console.log("Đã chọn:", selectedIds.size, "học sinh");
     }
 }
 
