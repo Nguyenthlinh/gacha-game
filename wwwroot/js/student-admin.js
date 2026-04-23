@@ -226,14 +226,22 @@ function toggleSelectMode() {
 }
 
 function toggleStudentSelection(id) {
-    if (selectedIds.has(id)) selectedIds.delete(id);
-    else selectedIds.add(id);
+    if (selectedIds.has(id)) {
+        selectedIds.delete(id);
+    } else {
+        selectedIds.add(id);
+    }
+    // Cập nhật số lượng trước
     updateSelectedCount();
+    // Sau đó mới vẽ lại để giữ trạng thái checkbox
     renderStudentAdmin();
 }
 
 function updateSelectedCount() {
-    document.getElementById('selectedCount').innerText = selectedIds.size;
+    const countEl = document.getElementById('selectedCount');
+    if (countEl) {
+        countEl.innerText = selectedIds.size;
+    }
 }
 
 async function deleteSelectedStudents() {
