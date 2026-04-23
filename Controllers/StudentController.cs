@@ -34,25 +34,25 @@ namespace MyMvcProject.Controllers
             return CreatedAtAction(nameof(GetStudents), new { id = student.Id }, student);
         }
 
+        public class BulkAddRequest {
+            public List<string> names { get; set; } = new();
+            public int classroomId { get; set; }
+        }
+
         [HttpPost("bulk")]
         public async Task<IActionResult> BulkAdd([FromBody] BulkAddRequest request)
         {
-            if (request == null || request.Names == null || !request.Names.Any()) return BadRequest();
+            if (request == null || request.names == null || !request.names.Any()) return BadRequest();
             
-            var students = request.Names.Select(name => new Student { 
+            var students = request.names.Select(name => new Student { 
                 Name = name.Trim(), 
                 Stickers = 0,
-                ClassroomId = request.ClassroomId 
+                ClassroomId = request.classroomId 
             }).ToList();
 
             _context.Students.AddRange(students);
             await _context.SaveChangesAsync();
             return Ok();
-        }
-
-        public class BulkAddRequest {
-            public List<string> Names { get; set; } = new();
-            public int ClassroomId { get; set; }
         }
 
         [HttpDelete("bulk")]

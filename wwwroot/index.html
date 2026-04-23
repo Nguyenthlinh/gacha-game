@@ -119,16 +119,22 @@
         <div class="offcanvas-body" style="background-color: #f8fafc;">
             <!-- Quản Lý Lớp Học -->
             <div class="bubbly-panel border-0 shadow-sm mb-4">
-                <div class="d-flex flex-wrap align-items-center gap-3">
-                    <div class="flex-grow-1">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
                         <label class="small text-muted fw-bold mb-1">Chọn Lớp Học:</label>
                         <select id="classSelector" class="form-select border-primary" onchange="onClassChange()">
                             <!-- Lớp học sẽ được load vào đây -->
                         </select>
                     </div>
-                    <div class="pt-4">
-                        <button class="btn btn-primary rounded-pill px-4" onclick="createNewClass()">+ Tạo Lớp Mới</button>
-                        <button class="btn btn-outline-danger rounded-pill px-3" onclick="deleteCurrentClass()">🗑️ Xóa Lớp</button>
+                    <div class="col-md-5">
+                        <label class="small text-muted fw-bold mb-1">Tên Lớp Mới:</label>
+                        <div class="input-group">
+                            <input type="text" id="newClassNameInput" class="form-select border-primary" placeholder="Ví dụ: 6A...">
+                            <button class="btn btn-primary" onclick="createNewClassDirect()">+ Thêm</button>
+                        </div>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="deleteCurrentClass()" title="Xóa lớp hiện tại">🗑️</button>
                     </div>
                 </div>
             </div>

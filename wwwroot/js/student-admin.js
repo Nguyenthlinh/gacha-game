@@ -23,7 +23,8 @@ async function loadClassrooms() {
         if (res.ok) {
             const classes = await res.json();
             const selector = document.getElementById('classSelector');
-            selector.innerHTML = classes.map(c => `<option value="${c.id}">${c.Name}</option>`).join('');
+            // Đổi c.Name thành c.name để khớp với JSON từ server
+            selector.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
             
             if (classes.length > 0) {
                 if (currentClassroomId === 0) currentClassroomId = classes[0].id;
@@ -33,6 +34,44 @@ async function loadClassrooms() {
                 selector.innerHTML = '<option value="0">Chưa có lớp nào</option>';
                 allStudents = [];
                 renderStudentAdmin();
+            }
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function createNewClassDirect() {
+    const input = document.getElementById('newClassNameInput');
+    const name = input.value.trim();
+    
+    if (!name) {
+        Swal.fire('Thông báo', 'Vui lòng nhập tên lớp!', 'warning');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/classroom', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Name: name })
+        });
+        if (res.ok) {
+            const newClass = await res.json();
+            currentClassroomId = newClass.id;
+            input.value = ''; // Xóa tên lớp vừa nhập
+            
+            await loadClassrooms(); // Tải lại danh sách lớp và chọn lớp mới
+            
+            // Tự động nhảy xuống ô nhập danh sách học sinh
+            const studentInput = document.getElementById('bulkStudentsInput');
+            if (studentInput) {
+                studentInput.focus();
+                Swal.fire({
+                    title: 'Đã tạo lớp thành công!',
+                    text: `Bây giờ bạn hãy nhập danh sách học sinh cho lớp ${name} nhé.`,
+                    icon: 'success',
+                    timer: 2500,
+                    showConfirmButton: false
+                });
             }
         }
     } catch(e) { console.error(e); }
@@ -79,19 +118,29 @@ function onClassChange() {
 }
 
 async function deleteCurrentClass() {
-    if (currentClassroomId === 0) return;
-    const { value: confirmed } = await Swal.fire({
+    if (!currentClassroomId || currentClassroomId === 0) {
+        Swal.fire('Thông báo', 'Vui lòng chọn một lớp để xóa!', 'info');
+        return;
+    }
+
+    const result = await Swal.fire({
         title: 'Xóa lớp học?',
         text: "Tất cả học sinh trong lớp này sẽ bị xóa! Bạn có chắc không?",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#ef4444'
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Đúng, xóa nó!',
+        cancelButtonText: 'Hủy'
     });
-    if (confirmed) {
+
+    if (result.isConfirmed) {
         try {
-            await fetch(`/api/classroom/${currentClassroomId}`, { method: 'DELETE' });
-            currentClassroomId = 0;
-            loadClassrooms();
+            const res = await fetch(`/api/classroom/${currentClassroomId}`, { method: 'DELETE' });
+            if (res.ok) {
+                currentClassroomId = 0;
+                loadClassrooms();
+                Swal.fire('Đã xóa!', 'Lớp học đã được loại bỏ.', 'success');
+            }
         } catch(e) { console.error(e); }
     }
 }
@@ -176,8 +225,8 @@ async function addBulkStudents() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                Names: names,
-                ClassroomId: currentClassroomId 
+                names: names,
+                classroomId: currentClassroomId 
             })
         });
         if (res.ok) {
