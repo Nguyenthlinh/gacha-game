@@ -2,15 +2,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MyMvcProject.Models
 {
-    public class Student
+    public class Classroom
     {
         [Key]
         public int Id { get; set; }
-
+        
+        [Required]
         public string Name { get; set; } = string.Empty;
-
-        public int Stickers { get; set; } = 0;
-
-        public int ClassroomId { get; set; }
     }
 }

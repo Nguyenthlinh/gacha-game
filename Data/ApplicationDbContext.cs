@@ -14,6 +14,7 @@ namespace MyMvcProject.Data
         public DbSet<RewardHistoryItem> RewardHistory { get; set; }
         public DbSet<GroupSetting> GroupSettings { get; set; }
         public DbSet<Student> Students { get; set; }
+        public DbSet<Classroom> Classrooms { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -12,32 +12,33 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
-// Seed dữ liệu mẫu thân thiện với trẻ em
+// Khởi tạo Database và Seed dữ liệu
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.EnsureCreated();
-    
-    // Ép tạo bảng Students nếu chưa có (vì EnsureCreated không update schema)
-    string createTableSql = @"
-        CREATE TABLE IF NOT EXISTS ""Students"" (
-            ""Id"" SERIAL PRIMARY KEY,
-            ""Name"" TEXT NOT NULL,
-            ""Stickers"" INTEGER NOT NULL DEFAULT 0,
-            ""ClassName"" TEXT NOT NULL DEFAULT 'Lớp 1'
-        );";
-    context.Database.ExecuteSqlRaw(createTableSql);
-    
-    if (!context.RewardItems.Any())
+    var services = scope.ServiceProvider;
+    using (var context = services.GetRequiredService<ApplicationDbContext>())
     {
-        context.RewardItems.AddRange(
-            new RewardItem { Name = "Gấu Bông Nhỏ", DropRate = 20 },
-            new RewardItem { Name = "Bút Chì Màu", DropRate = 30 },
-            new RewardItem { Name = "Sticker Siêu Nhân", DropRate = 30 },
-            new RewardItem { Name = "Kẹo Mút Trái Cây", DropRate = 15 },
-            new RewardItem { Name = "Ba Lô Siêu Nhân", DropRate = 5 }
-        );
-        context.SaveChanges();
+        context.Database.OpenConnection();
+        try {
+            // Tạo bảng Classrooms nếu chưa có
+            context.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS ""Classrooms"" (
+                    ""Id"" SERIAL PRIMARY KEY,
+                    ""Name"" TEXT NOT NULL
+                );
+            ");
+            // Tạo bảng Students nếu chưa có
+            context.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS ""Students"" (
+                    ""Id"" SERIAL PRIMARY KEY,
+                    ""Name"" TEXT NOT NULL,
+                    ""Stickers"" INTEGER DEFAULT 0,
+                    ""ClassroomId"" INTEGER DEFAULT 0
+                );
+            ");
+        } finally {
+            context.Database.CloseConnection();
+        }
     }
 }
 
@@ -48,6 +49,5 @@ app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();
 
-// Hỗ trợ PORT env var của Render.com
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 app.Run($"http://0.0.0.0:{port}");

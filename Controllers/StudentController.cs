@@ -20,9 +20,10 @@ namespace MyMvcProject.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Student>>> GetStudents()
+        public async Task<ActionResult<IEnumerable<Student>>> GetStudents(int classroomId = 0)
         {
-            return await _context.Students.OrderBy(s => s.Name).ToListAsync();
+            if (classroomId == 0) return await _context.Students.ToListAsync();
+            return await _context.Students.Where(s => s.ClassroomId == classroomId).ToListAsync();
         }
 
         [HttpPost]
@@ -34,14 +35,24 @@ namespace MyMvcProject.Controllers
         }
 
         [HttpPost("bulk")]
-        public async Task<IActionResult> BulkAdd([FromBody] List<string> names)
+        public async Task<IActionResult> BulkAdd([FromBody] BulkAddRequest request)
         {
-            if (names == null || !names.Any()) return BadRequest();
+            if (request == null || request.Names == null || !request.Names.Any()) return BadRequest();
             
-            var newStudents = names.Select(name => new Student { Name = name }).ToList();
-            _context.Students.AddRange(newStudents);
+            var students = request.Names.Select(name => new Student { 
+                Name = name.Trim(), 
+                Stickers = 0,
+                ClassroomId = request.ClassroomId 
+            }).ToList();
+
+            _context.Students.AddRange(students);
             await _context.SaveChangesAsync();
             return Ok();
+        }
+
+        public class BulkAddRequest {
+            public List<string> Names { get; set; } = new();
+            public int ClassroomId { get; set; }
         }
 
         [HttpDelete("bulk")]
