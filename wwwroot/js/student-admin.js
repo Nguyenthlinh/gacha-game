@@ -1,9 +1,10 @@
 let allStudents = [];
 let studentRedeemModal;
-let isSelectMode = false;
+let isSelectMode = false;  // Chế độ xóa nhiều
+let isAddMode = false;     // Chế độ cộng nhiều
 let selectedIds = new Set();
 let currentClassroomId = 0;
-let allClassrooms = []; // Lưu danh sách lớp để tìm tên
+let allClassrooms = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     studentRedeemModal = new bootstrap.Modal(document.getElementById('redeemModal'));
@@ -176,11 +177,11 @@ function renderStudentAdmin() {
     list.innerHTML = '';
 
     const colors = [
-        { border: '#38bdf8', bg: '#f0f9ff' }, // Xanh dương
-        { border: '#4ade80', bg: '#f0fdf4' }, // Xanh lá
-        { border: '#fb7185', bg: '#fff1f2' }, // Hồng
-        { border: '#a855f7', bg: '#faf5ff' }, // Tím
-        { border: '#fb923c', bg: '#fff7ed' }  // Cam
+        { border: '#38bdf8', bg: '#f0f9ff' },
+        { border: '#4ade80', bg: '#f0fdf4' },
+        { border: '#fb7185', bg: '#fff1f2' },
+        { border: '#a855f7', bg: '#faf5ff' },
+        { border: '#fb923c', bg: '#fff7ed' }
     ];
 
     allStudents.forEach((s, index) => {
@@ -190,18 +191,26 @@ function renderStudentAdmin() {
         const color = colors[index % colors.length];
         const isSelected = selectedIds.has(s.id);
         
-        const milestone10 = s.stickers >= 10 ? `<span class="badge bg-warning text-dark me-1 clickable-milestone" onclick="promptRedeem(${s.id}, 10, 'Quà Nhỏ')" title="Bấm để đổi Quà Nhỏ">🎁 Đổi 10</span>` : '';
-        const milestone20 = s.stickers >= 20 ? `<span class="badge bg-success me-1 clickable-milestone" onclick="promptRedeem(${s.id}, 20, 'Quà Lớn')" title="Bấm để đổi Quà Lớn">🏆 Đổi 20</span>` : '';
-        const milestone30 = s.stickers >= 30 ? `<span class="badge bg-danger me-1 clickable-milestone" onclick="promptRedeem(${s.id}, 30, 'Quà VIP')" title="Bấm để đổi Quà VIP" style="background: linear-gradient(45deg, #f1c40f, #d35400) !important;">👑 Đổi 30</span>` : '';
+        const milestone10 = s.stickers >= 10 ? `<span class="badge bg-warning text-dark me-1 clickable-milestone" onclick="promptRedeem(${s.id}, 10, 'Quà Nhỏ')" title="Bấm để đổi">🎁 Đổi 10</span>` : '';
+        const milestone20 = s.stickers >= 20 ? `<span class="badge bg-success me-1 clickable-milestone" onclick="promptRedeem(${s.id}, 20, 'Quà Lớn')" title="Bấm để đổi">🏆 Đổi 20</span>` : '';
+        const milestone30 = s.stickers >= 30 ? `<span class="badge bg-danger me-1 clickable-milestone" onclick="promptRedeem(${s.id}, 30, 'Quà VIP')" title="Bấm để đổi" style="background: linear-gradient(45deg, #f1c40f, #d35400) !important;">👑 Đổi 30</span>` : '';
 
-        const selectCheckbox = isSelectMode ? `
-            <div class="form-check position-absolute top-0 end-0 m-2">
-                <input class="form-check-input border-primary shadow-sm" type="checkbox" style="width:25px;height:25px;cursor:pointer" ${isSelected ? 'checked' : ''} onchange="toggleStudentSelection(${s.id})">
-            </div>
-        ` : '';
+        // Checkbox hiện thị khi cả 2 chế độ đều khả dụng
+        let selectCheckbox = '';
+        if (isSelectMode || isAddMode) {
+            const borderColor = isAddMode ? '#0d6efd' : '#dc3545';
+            selectCheckbox = `
+                <div class="form-check position-absolute top-0 end-0 m-2">
+                    <input class="form-check-input shadow-sm" type="checkbox" 
+                        style="width:25px;height:25px;cursor:pointer;border-color:${borderColor}" 
+                        ${isSelected ? 'checked' : ''} 
+                        onchange="toggleStudentSelection(${s.id})">
+                </div>
+            `;
+        }
 
         col.innerHTML = `
-            <div class="p-3 border rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between position-relative ${isSelected ? 'border-primary bg-primary-subtle' : ''}" 
+            <div class="p-3 border rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between position-relative ${isSelected ? (isAddMode ? 'border-primary bg-primary-subtle' : 'border-danger bg-danger-subtle') : ''}" 
                  style="border-left: 6px solid ${color.border} !important; background-color: ${isSelected ? '' : color.bg}; transition: all 0.2s;">
                 ${selectCheckbox}
                 <div>
@@ -315,17 +324,25 @@ function showStudentRedeemPrompt(student, cost, prizeName) {
 }
 
 async function doStudentRedeem(id, cost) {
+    // Optimistic UI: Trừ ngay lập tức
+    const student = allStudents.find(x => x.id === id);
+    if (student) {
+        student.stickers -= cost;
+        if (student.stickers < 0) student.stickers = 0;
+        renderStudentAdmin();
+    }
+    studentRedeemModal.hide();
+
     try {
-        const res = await fetch(`/api/student/${id}/redeem`, {
+        await fetch(`/api/student/${id}/redeem`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: cost
         });
-        if (res.ok) {
-            studentRedeemModal.hide();
-            loadStudentAdmin();
-        }
-    } catch(e) { console.error(e); }
+    } catch(e) {
+        console.error(e);
+        loadStudentAdmin(); // Nếu lỗi thì reload lại cho chính xác
+    }
 }
 
 async function editStudentStickers(id, currentVal) {
@@ -361,25 +378,130 @@ async function deleteStudentAdmin(id) {
     } catch(e) { console.error(e); }
 }
 
+// ===== CHẾ ĐỘ XÓA NHIỀU =====
 function toggleSelectMode() {
+    if (isAddMode) toggleAddMode(); // Tắt chế độ kia nếu đang bật
+    
     isSelectMode = !isSelectMode;
     selectedIds.clear();
+    updateSelectedCount();
     
-    const btnToggle = document.getElementById('btnToggleSelect');
-    const btnDelete = document.getElementById('btnDeleteSelected');
+    document.getElementById('normalButtons').classList.toggle('d-none', isSelectMode);
+    document.getElementById('deleteModeButtons').classList.toggle('d-none', !isSelectMode);
     
-    if (isSelectMode) {
-        btnToggle.innerText = '❌ Hủy chọn';
-        btnToggle.className = 'btn btn-sm btn-outline-secondary rounded-pill px-3';
-        btnDelete.classList.remove('d-none');
-    } else {
-        btnToggle.innerText = '🗑️ Xóa nhiều';
-        btnToggle.className = 'btn btn-sm btn-outline-danger rounded-pill px-3';
-        btnDelete.classList.add('d-none');
+    renderStudentAdmin();
+}
+
+// ===== CHẾ ĐỘ CỘNG NHIỀU =====
+function toggleAddMode() {
+    if (isSelectMode) toggleSelectMode(); // Tắt chế độ kia nếu đang bật
+    
+    isAddMode = !isAddMode;
+    selectedIds.clear();
+    updateSelectedCount();
+    
+    document.getElementById('normalButtons').classList.toggle('d-none', isAddMode);
+    document.getElementById('addModeButtons').classList.toggle('d-none', !isAddMode);
+    
+    // Reset số lượng sticker về 1 và focus khi vào chế độ
+    if (isAddMode) {
+        const input = document.getElementById('stickerAmountInput');
+        if (input) {
+            input.value = 1;
+            setTimeout(() => {
+                input.focus();
+                input.select(); // Chọn sẵn số 1 để gõ đè số mới luôn
+            }, 100);
+
+            // Thêm sự kiện nhấn Enter
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    addStickerToSelected();
+                }
+            };
+        }
     }
     
-    updateSelectedCount();
     renderStudentAdmin();
+}
+
+async function addStickerToSelected() {
+    if (selectedIds.size === 0) {
+        alert('Chưa chọn học sinh nào!');
+        return;
+    }
+    
+    const input = document.getElementById('stickerAmountInput');
+    const amount = parseInt(input ? input.value : 1);
+    if (!amount || amount <= 0) {
+        alert('Vui lòng nhập số sticker hợp lệ!');
+        return;
+    }
+    
+    // Optimistic: Cập nhật UI ngay
+    selectedIds.forEach(id => {
+        const s = allStudents.find(x => x.id === id);
+        if (s) s.stickers += amount;
+    });
+    renderStudentAdmin();
+    
+    // Gửi lên server song song
+    const promises = Array.from(selectedIds).map(id =>
+        fetch(`/api/student/${id}/stickers`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: amount
+        })
+    );
+    
+    try {
+        await Promise.all(promises);
+        toggleAddMode(); // Tắt chế độ sau khi cộng xong
+    } catch(e) {
+        console.error(e);
+        loadStudentAdmin();
+    }
+}
+
+async function addStickerToWholeClass() {
+    if (allStudents.length === 0) {
+        alert('Lớp chưa có học sinh nào!');
+        return;
+    }
+    
+    const { value: amount } = await Swal.fire({
+        title: `⭐ Cộng sticker cho cả lớp `,
+        input: 'number',
+        inputValue: 1,
+        inputAttributes: { min: 1, max: 99 },
+        inputPlaceholder: 'Nhập số sticker',
+        showCancelButton: true,
+        confirmButtonText: '⭐ Cộng ngay!',
+        cancelButtonText: 'Hủy',
+        inputValidator: (v) => (!v || v < 1) ? 'Vui lòng nhập số >= 1' : null
+    });
+    
+    if (!amount) return;
+    const num = parseInt(amount);
+    
+    // Optimistic: Cập nhật tất cả ngay lập tức
+    allStudents.forEach(s => { s.stickers += num; });
+    renderStudentAdmin();
+    
+    const promises = allStudents.map(s =>
+        fetch(`/api/student/${s.id}/stickers`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: num
+        })
+    );
+    
+    try {
+        await Promise.all(promises);
+    } catch(e) {
+        console.error(e);
+        loadStudentAdmin();
+    }
 }
 
 function toggleStudentSelection(id) {
@@ -394,11 +516,13 @@ function toggleStudentSelection(id) {
 }
 
 function updateSelectedCount() {
-    const countEl = document.getElementById('selectedCountSidebar');
-    if (countEl) {
-        countEl.innerText = selectedIds.size;
-        console.log("Đã chọn:", selectedIds.size, "học sinh");
-    }
+    const count = selectedIds.size;
+    // Cập nhật bộ đếm cho chế độ xóa
+    const delCountEl = document.getElementById('selectedCountSidebar');
+    if (delCountEl) delCountEl.innerText = count;
+    // Cập nhật bộ đếm cho chế độ cộng
+    const addCountEl = document.getElementById('addSelectedCount');
+    if (addCountEl) addCountEl.innerText = count;
 }
 
 async function deleteSelectedStudents() {
