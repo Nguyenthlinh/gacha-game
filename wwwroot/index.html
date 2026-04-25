@@ -70,26 +70,28 @@
                             <h4 id="classListTitle" class="text-primary m-0" style="font-weight:800">Danh Sách Lớp</h4>
 
                             <!-- Trạng thái bình thường -->
-                            <div id="normalButtons" class="d-flex gap-2 flex-wrap">
-                                <button class="btn btn-sm btn-success rounded-pill px-3" onclick="addStickerToWholeClass()">⭐ Cộng cả lớp</button>
-                                <button class="btn btn-sm btn-danger rounded-pill px-3" onclick="subtractStickerFromWholeClass()">❌ Trừ cả lớp</button>
-                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="toggleAddMode()">✅ Cộng nhiều</button>
-                                <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="toggleSelectMode()">🗑️ Xóa nhiều</button>
-                                <button class="btn btn-sm btn-light border rounded-pill px-3" onclick="clearAllStudents()">Dọn dẹp lớp</button>
+                            <div id="normalButtons" class="d-flex gap-2 flex-wrap align-items-center">
+                                <div class="input-group input-group-sm" style="width: auto;">
+                                    <span class="input-group-text bg-light fw-bold text-muted" style="border-radius: 20px 0 0 20px;">Cả lớp:</span>
+                                    <input type="number" id="bulkAllAmountInput" class="form-control" style="width:60px" value="1" min="1" max="99">
+                                    <button class="btn btn-success fw-bold" onclick="addStickerToWholeClassV2()">⭐ Cộng</button>
+                                    <button class="btn btn-danger fw-bold" style="border-radius: 0 20px 20px 0;" onclick="subtractStickerFromWholeClassV2()">❌ Trừ</button>
+                                </div>
+                                <div class="vr mx-1"></div>
+                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="toggleBulkMode()">✅ Chọn nhiều</button>
+                                <button class="btn btn-sm btn-light border rounded-pill px-3" onclick="clearAllStudents()">Dọn dẹp</button>
                             </div>
 
-                            <!-- Trạng thái Cộng nhiều -->
-                            <div id="addModeButtons" class="d-flex gap-2 flex-wrap align-items-center d-none">
-                                <span class="text-primary fw-bold small">Cộng <span id="addSelectedCount">0</span> học sinh:</span>
-                                <input type="number" id="stickerAmountInput" class="form-control form-control-sm" style="width:70px" value="1" min="1" max="99">
-                                <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="addStickerToSelected()">⭐ Cộng cho đã chọn</button>
-                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="toggleAddMode()">❌ Hủy</button>
-                            </div>
-
-                            <!-- Trạng thái Xóa nhiều -->
-                            <div id="deleteModeButtons" class="d-flex gap-2 flex-wrap d-none">
-                                <button class="btn btn-sm btn-danger rounded-pill px-3" onclick="deleteSelectedStudents()">Xóa đã chọn (<span id="selectedCountSidebar">0</span>)</button>
-                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="toggleSelectMode()">❌ Hủy</button>
+                            <!-- Chế độ chọn nhiều (Hợp nhất Cộng/Trừ/Xóa) -->
+                            <div id="bulkActionsToolbar" class="d-flex gap-2 flex-wrap align-items-center d-none">
+                                <span class="text-primary fw-bold small">Đã chọn <span id="bulkSelectedCount">0</span>:</span>
+                                <div class="input-group input-group-sm" style="width: auto;">
+                                    <input type="number" id="bulkActionAmountInput" class="form-control" style="width:60px" value="1" min="1" max="99">
+                                    <button class="btn btn-primary fw-bold" onclick="addStickerToSelectedV2()">⭐ Cộng</button>
+                                    <button class="btn btn-danger fw-bold" onclick="subtractStickerFromSelectedV2()">❌ Trừ</button>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="deleteSelectedStudentsV2()">🗑️ Xóa</button>
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="toggleBulkMode()">❌ Hủy</button>
                             </div>
                         </div>
                         <div class="row g-3" id="studentListContainer">

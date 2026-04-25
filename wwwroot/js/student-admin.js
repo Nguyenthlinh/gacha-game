@@ -195,14 +195,13 @@ function renderStudentAdmin() {
         const milestone20 = s.stickers >= 20 ? `<span class="badge bg-success me-1 clickable-milestone" onclick="promptRedeem(${s.id}, 20, 'Quà Lớn')" title="Bấm để đổi">🏆 Đổi 20</span>` : '';
         const milestone30 = s.stickers >= 30 ? `<span class="badge bg-danger me-1 clickable-milestone" onclick="promptRedeem(${s.id}, 30, 'Quà VIP')" title="Bấm để đổi" style="background: linear-gradient(45deg, #f1c40f, #d35400) !important;">👑 Đổi 30</span>` : '';
 
-        // Checkbox hiện thị khi cả 2 chế độ đều khả dụng
+        // Checkbox hiện thị khi chế độ chọn nhiều khả dụng
         let selectCheckbox = '';
-        if (isSelectMode || isAddMode) {
-            const borderColor = isAddMode ? '#0d6efd' : '#dc3545';
+        if (isBulkMode) {
             selectCheckbox = `
                 <div class="form-check position-absolute top-0 end-0 m-2">
                     <input class="form-check-input shadow-sm" type="checkbox" 
-                        style="width:25px;height:25px;cursor:pointer;border-color:${borderColor}" 
+                        style="width:25px;height:25px;cursor:pointer;border-color:#0d6efd" 
                         ${isSelected ? 'checked' : ''} 
                         onchange="toggleStudentSelection(${s.id})">
                 </div>
@@ -210,8 +209,9 @@ function renderStudentAdmin() {
         }
 
         col.innerHTML = `
-            <div class="p-3 border rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between position-relative ${isSelected ? (isAddMode ? 'border-primary bg-primary-subtle' : 'border-danger bg-danger-subtle') : ''}" 
-                 style="border-left: 6px solid ${color.border} !important; background-color: ${isSelected ? '' : color.bg}; transition: all 0.2s;">
+            <div class="p-3 border rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between position-relative ${isSelected ? 'border-primary bg-primary-subtle' : ''}" 
+                 style="border-left: 6px solid ${color.border} !important; background-color: ${isSelected ? '' : color.bg}; transition: all 0.2s; cursor: ${isBulkMode ? 'pointer' : 'default'};"
+                 onclick="${isBulkMode ? `toggleStudentSelection(${s.id})` : ''}">
                 ${selectCheckbox}
                 <div>
                     <h5 class="fw-bold mb-1" style="color: ${color.border}">${s.name}</h5>
@@ -378,74 +378,42 @@ async function deleteStudentAdmin(id) {
     } catch(e) { console.error(e); }
 }
 
-// ===== CHẾ ĐỘ XÓA NHIỀU =====
-function toggleSelectMode() {
-    if (isAddMode) toggleAddMode(); // Tắt chế độ kia nếu đang bật
-    
-    isSelectMode = !isSelectMode;
-    selectedIds.clear();
-    updateSelectedCount();
-    
-    document.getElementById('normalButtons').classList.toggle('d-none', isSelectMode);
-    document.getElementById('deleteModeButtons').classList.toggle('d-none', !isSelectMode);
-    
-    renderStudentAdmin();
-}
+// ===== CHẾ ĐỘ CHỌN NHIỀU (HỢP NHẤT) =====
+let isBulkMode = false;
 
-// ===== CHẾ ĐỘ CỘNG NHIỀU =====
-function toggleAddMode() {
-    if (isSelectMode) toggleSelectMode(); // Tắt chế độ kia nếu đang bật
-    
-    isAddMode = !isAddMode;
+function toggleBulkMode() {
+    isBulkMode = !isBulkMode;
     selectedIds.clear();
     updateSelectedCount();
     
-    document.getElementById('normalButtons').classList.toggle('d-none', isAddMode);
-    document.getElementById('addModeButtons').classList.toggle('d-none', !isAddMode);
+    document.getElementById('normalButtons').classList.toggle('d-none', isBulkMode);
+    document.getElementById('bulkActionsToolbar').classList.toggle('d-none', !isBulkMode);
     
-    // Reset số lượng sticker về 1 và focus khi vào chế độ
-    if (isAddMode) {
-        const input = document.getElementById('stickerAmountInput');
+    if (isBulkMode) {
+        const input = document.getElementById('bulkActionAmountInput');
         if (input) {
             input.value = 1;
-            setTimeout(() => {
-                input.focus();
-                input.select(); // Chọn sẵn số 1 để gõ đè số mới luôn
-            }, 100);
-
-            // Thêm sự kiện nhấn Enter
+            setTimeout(() => { input.focus(); input.select(); }, 100);
             input.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    addStickerToSelected();
-                }
+                if (e.key === 'Enter') subtractStickerFromSelectedV2();
             };
         }
     }
-    
     renderStudentAdmin();
 }
 
-async function addStickerToSelected() {
-    if (selectedIds.size === 0) {
-        alert('Chưa chọn học sinh nào!');
-        return;
-    }
-    
-    const input = document.getElementById('stickerAmountInput');
+async function addStickerToSelectedV2() {
+    if (selectedIds.size === 0) return;
+    const input = document.getElementById('bulkActionAmountInput');
     const amount = parseInt(input ? input.value : 1);
-    if (!amount || amount <= 0) {
-        alert('Vui lòng nhập số sticker hợp lệ!');
-        return;
-    }
-    
-    // Optimistic: Cập nhật UI ngay
+    if (!amount || amount <= 0) return;
+
     selectedIds.forEach(id => {
         const s = allStudents.find(x => x.id === id);
         if (s) s.stickers += amount;
     });
     renderStudentAdmin();
     
-    // Gửi lên server song song
     const promises = Array.from(selectedIds).map(id =>
         fetch(`/api/student/${id}/stickers`, {
             method: 'PATCH',
@@ -453,14 +421,50 @@ async function addStickerToSelected() {
             body: amount
         })
     );
+    try { await Promise.all(promises); toggleBulkMode(); } catch(e) { console.error(e); loadStudentAdmin(); }
+}
+
+async function subtractStickerFromSelectedV2() {
+    if (selectedIds.size === 0) return;
+    const input = document.getElementById('bulkActionAmountInput');
+    const amount = parseInt(input ? input.value : 1);
+    if (!amount || amount <= 0) return;
+
+    selectedIds.forEach(id => {
+        const s = allStudents.find(x => x.id === id);
+        if (s) {
+            s.stickers -= amount;
+            if (s.stickers < 0) s.stickers = 0;
+        }
+    });
+    renderStudentAdmin();
+    
+    const promises = Array.from(selectedIds).map(id =>
+        fetch(`/api/student/${id}/stickers`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: -amount
+        })
+    );
+    try { await Promise.all(promises); toggleBulkMode(); } catch(e) { console.error(e); loadStudentAdmin(); }
+}
+
+async function deleteSelectedStudentsV2() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Bạn có chắc muốn xóa ${selectedIds.size} học sinh đã chọn?`)) return;
     
     try {
-        await Promise.all(promises);
-        toggleAddMode(); // Tắt chế độ sau khi cộng xong
-    } catch(e) {
-        console.error(e);
-        loadStudentAdmin();
-    }
+        const res = await fetch('/api/student/bulk', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Array.from(selectedIds))
+        });
+        if (res.ok) {
+            selectedIds.clear();
+            toggleBulkMode();
+            loadStudentAdmin();
+        }
+    } catch(e) { console.error(e); }
 }
 
 async function addStickerToWholeClass() {
@@ -517,12 +521,8 @@ function toggleStudentSelection(id) {
 
 function updateSelectedCount() {
     const count = selectedIds.size;
-    // Cập nhật bộ đếm cho chế độ xóa
-    const delCountEl = document.getElementById('selectedCountSidebar');
-    if (delCountEl) delCountEl.innerText = count;
-    // Cập nhật bộ đếm cho chế độ cộng
-    const addCountEl = document.getElementById('addSelectedCount');
-    if (addCountEl) addCountEl.innerText = count;
+    const el = document.getElementById('bulkSelectedCount');
+    if (el) el.innerText = count;
 }
 
 async function deleteSelectedStudents() {
@@ -607,3 +607,52 @@ async function subtractStickerFromWholeClass() {
         loadStudentAdmin();
     }
 }
+
+async function addStickerToWholeClassV2() {
+    const input = document.getElementById('bulkAllAmountInput');
+    const amount = parseInt(input ? input.value : 1);
+    if (!amount || amount <= 0 || allStudents.length === 0) return;
+
+    allStudents.forEach(s => { s.stickers += amount; });
+    renderStudentAdmin();
+    
+    const promises = allStudents.map(s =>
+        fetch(`/api/student/${s.id}/stickers`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: amount
+        })
+    );
+    try { await Promise.all(promises); } catch(e) { console.error(e); loadStudentAdmin(); }
+}
+
+async function subtractStickerFromWholeClassV2() {
+    const input = document.getElementById('bulkAllAmountInput');
+    const amount = parseInt(input ? input.value : 1);
+    if (!amount || amount <= 0 || allStudents.length === 0) return;
+
+    allStudents.forEach(s => { 
+        s.stickers -= amount; 
+        if (s.stickers < 0) s.stickers = 0;
+    });
+    renderStudentAdmin();
+    
+    const promises = allStudents.map(s =>
+        fetch(`/api/student/${s.id}/stickers`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: -amount
+        })
+    );
+    try { await Promise.all(promises); } catch(e) { console.error(e); loadStudentAdmin(); }
+}
+
+// Hook Enter key for Bulk All
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        const activeEl = document.activeElement;
+        if (activeEl && activeEl.id === 'bulkAllAmountInput') {
+            subtractStickerFromWholeClassV2(); // Mặc định Enter là Trừ
+        }
+    }
+});

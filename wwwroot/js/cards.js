@@ -244,3 +244,4 @@ function declineCardReward() {
     document.getElementById('confirmCardPanel').classList.add('hidden');
     document.getElementById('resetBtn').style.display = 'inline-block';
 }
+}
