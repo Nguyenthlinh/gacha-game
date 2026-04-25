@@ -13,129 +13,13 @@
         <h1 class="text-center title-text mb-4">✨  Nhận Quà Nào ✨</h1>
         
         <div class="d-flex justify-content-center gap-3 mb-4 flex-wrap game-btn-group">
-            <a href="gacha.html" class="btn btn-bubbly btn-gacha">🥳 Chơi Vòng Quay</a>
-            <a href="cards.html" class="btn btn-bubbly btn-cards">😜 Chơi Lật Thẻ</a>
-            <a href="mystery-cards.html" class="btn btn-bubbly" style="background: linear-gradient(45deg, #6a11cb, #2575fc); color:white;">🎁 Hộp Quà Bí Ẩn</a>
-        </div>
-
-        <!-- Nút quản lý quà bị thay thế bằng cục bong bóng ở rìa -->
-
-        <!-- History Panel on Main Screen -->
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <div class="bubbly-panel">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3 class="text-success m-0" style="font-weight:800">📜 Lịch Sử Nhận Quà</h3>
-                        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="clearHistory()">Xóa Lịch Sử</button>
-                    </div>
-                    <div style="max-height: 400px; overflow-y: auto;">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Thời gian</th>
-                                    <th class="table-hide-mobile">Nguồn</th>
-                                    <th>Phần quà</th>
-                                </tr>
-                            </thead>
-                            <tbody id="historyList">
-                                <!-- Lịch sử sẽ load vào đây -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admin Sidebar (Offcanvas) -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="adminSidebar" style="width: 1400px; max-width: 95vw;">
-        <div class="offcanvas-header bg-light border-bottom d-flex justify-content-between align-items-center">
-            <h5 class="offcanvas-title fw-bold text-primary fs-3">⚙️ Quản Lý Danh Sách Quà </h5>
-            <div class="d-flex gap-2">
-                <!-- <a href="students.html" class="btn btn-outline-primary fw-bold rounded-pill">⭐ Quản Lý Stickers</a> -->
-                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-            </div>
-        </div>
-        <div class="offcanvas-body" style="background-color: var(--bg-color);">
-            <div class="row h-100">
-                <div class="col-md-3 mb-4">
-                    <div class="bubbly-panel h-100 border-0 shadow-sm">
-                        <h4 class="mb-3 text-primary" style="font-weight:800">Nhập Danh Sách</h4>
-                        <p class="text-muted small"> Cú pháp: <code>Tên Quà : Nhóm (1-5) : Số Lượng : Tỉ Lệ</code><br>(VD: <code>Gấu bông : 4 : 5 : 20</code>. Mặc định Nhóm=1, SL=10, Tỉ lệ=10%).</p>
-                        <textarea id="bulkGifts" class="form-control mb-3" rows="15"></textarea>
-                        <button class="btn btn-bubbly btn-success-bubbly w-100 mb-2" onclick="addBulkRewards()">Thêm </button>
-                        <!-- <button class="btn btn-bubbly btn-danger-bubbly w-100" onclick="clearRewards()">Xóa Toàn Bộ</button> -->
-                    </div>
-                </div>
-                
-                <div class="col-md-9 mb-4">
-                    <div class="bubbly-panel h-100 border-0 shadow-sm">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h4 class="text-primary m-0" style="font-weight:800">Quà Đang Có Nhỉ?</h4>
-                        </div>
-                        <p class="text-muted small">Click vào từng tab nhóm để xem và quản lý. <b>Tích chọn</b> để xóa hoặc di chuyển nhiều món cùng lúc.</p>
-                        
-                        <!-- Bulk Actions Toolbar -->
-                        <div id="bulkActionsToolbar" class="d-flex align-items-center bg-light p-2 rounded shadow-sm mb-3 border d-none">
-                            <span class="fw-bold text-primary me-3">Đã chọn: <span id="selectedCount">0</span></span>
-                            <button class="btn btn-sm btn-danger rounded-pill px-3 me-2 fw-bold" onclick="bulkDelete()">🗑️ Xóa</button>
-                            <div class="input-group input-group-sm" style="width: auto;">
-                                <select class="form-select" id="bulkMoveGroup" style="border-radius: 20px 0 0 20px;">
-                                    <!-- Sẽ được load động -->
-                                </select>
-                                <button class="btn btn-primary fw-bold" style="border-radius: 0 20px 20px 0;" onclick="bulkMove()">➡️ Chuyển</button>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div id="groupsContainer" class="mt-2 flex-grow-1">
-                                <!-- Nhóm sẽ được gen bằng JS dạng tabs -->
-                            </div>
-                            <button class="btn btn-sm btn-outline-primary ms-2 rounded-pill px-3 fw-bold" onclick="openGroupManager()">⚙️ Quản lý nhóm</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Group Management Modal -->
-    <div class="modal fade" id="groupManagerModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content bubbly-panel border-0">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold text-primary">⚙️ Quản Lý Nhóm Quà</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="groupManagerList" class="mb-3">
-                        <!-- Danh sách nhóm để sửa/xóa -->
-                    </div>
-                    <hr>
-                    <h6 class="fw-bold">Thêm nhóm mới</h6>
-                    <div class="input-group mb-2">
-                        <input type="text" id="newGroupName" class="form-control" placeholder="Tên nhóm (VD: VIP)">
-                        <input type="color" id="newGroupColor" class="form-control form-control-color" value="#6c757d" title="Chọn màu">
-                        <button class="btn btn-success" onclick="addNewGroup()">Thêm</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-                    </div>
-                </div>
-            </div>
+            <a href="mystery-cards.html" class="btn btn-bubbly" style="background: linear-gradient(45deg, #6a11cb, #2575fc); color:white; font-size: 1.5rem; padding: 15px 40px;">🎁 Chơi Hộp Quà Bí Ẩn</a>
         </div>
     </div>
 
     <!-- Cục Bong Bóng Quản Lý Sticker (Dành riêng cho Học Sinh) -->
-    <div class="floating-admin-wrapper" data-bs-toggle="offcanvas" data-bs-target="#studentSidebar" style="bottom: 115px; text-decoration: none;" title="Quản Lý Stickers">
+    <div class="floating-admin-wrapper" data-bs-toggle="offcanvas" data-bs-target="#studentSidebar" style="bottom: 30px; text-decoration: none;" title="Quản Lý Stickers">
         <div class="floating-admin-btn" style="background: linear-gradient(135deg, #facc15, #f59e0b);">⭐</div>
-    </div>
-
-    <!-- Cục Bong Bóng Quản Lý Quà (Floating Bubble) -->
-    <div class="floating-admin-wrapper" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" title="Quản Lý Quà">
-        <div class="floating-admin-btn">🪸</div>
     </div>
 
     <!-- Sidebar Quản Lý Học Sinh (Offcanvas) -->
