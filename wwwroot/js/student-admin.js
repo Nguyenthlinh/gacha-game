@@ -562,3 +562,48 @@ async function clearAllStudents() {
         } catch(e) { console.error(e); }
     }
 }
+async function subtractStickerFromWholeClass() {
+    if (allStudents.length === 0) {
+        alert('Lớp chưa có học sinh nào!');
+        return;
+    }
+    
+    const { value: amount } = await Swal.fire({
+        title: `❌ Trừ sticker cho cả lớp `,
+        input: 'number',
+        inputValue: 1,
+        inputAttributes: { min: 1, max: 99 },
+        inputPlaceholder: 'Nhập số sticker muốn trừ',
+        showCancelButton: true,
+        confirmButtonText: '❌ Trừ ngay!',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#ef4444',
+        inputValidator: (v) => (!v || v < 1) ? 'Vui lòng nhập số >= 1' : null
+    });
+    
+    if (!amount) return;
+    const num = parseInt(amount);
+    
+    // Optimistic: Cập nhật tất cả ngay lập tức
+    allStudents.forEach(s => { 
+        s.stickers -= num; 
+        if (s.stickers < 0) s.stickers = 0; // Đảm bảo không âm
+    });
+    renderStudentAdmin();
+    
+    // Gửi lệnh trừ lên server (gửi số âm)
+    const promises = allStudents.map(s =>
+        fetch(`/api/student/${s.id}/stickers`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: -num
+        })
+    );
+    
+    try {
+        await Promise.all(promises);
+    } catch(e) {
+        console.error(e);
+        loadStudentAdmin();
+    }
+}
