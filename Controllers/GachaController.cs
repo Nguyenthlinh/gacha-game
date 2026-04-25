@@ -32,6 +32,43 @@ namespace MyMvcProject.Controllers
             return await _context.GroupSettings.AsNoTracking().OrderBy(g => g.Id).ToListAsync();
         }
 
+        [HttpPut("groups/{id}")]
+        public async Task<IActionResult> UpdateGroup(int id, [FromBody] GroupSetting updated)
+        {
+            var group = await _context.GroupSettings.FindAsync(id);
+            if (group == null) return NotFound();
+
+            group.Name = updated.Name;
+            group.Probability = updated.Probability;
+            group.Color = updated.Color;
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPost("groups")]
+        public async Task<ActionResult<GroupSetting>> AddGroup([FromBody] GroupSetting group)
+        {
+            _context.GroupSettings.Add(group);
+            await _context.SaveChangesAsync();
+            return Ok(group);
+        }
+
+        [HttpDelete("groups/{id}")]
+        public async Task<IActionResult> DeleteGroup(int id)
+        {
+            var group = await _context.GroupSettings.FindAsync(id);
+            if (group == null) return NotFound();
+
+            // Chuyển quà của nhóm này về nhóm 1 trước khi xóa
+            var rewards = _context.RewardItems.Where(r => r.GroupId == id);
+            foreach(var r in rewards) r.GroupId = 1;
+
+            _context.GroupSettings.Remove(group);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
         [HttpPatch("groups/{id}/rate")]
         public async Task<IActionResult> UpdateGroupProbability(int id, [FromBody] double newRate)
         {
@@ -141,9 +178,6 @@ namespace MyMvcProject.Controllers
         [HttpPatch("rewards/{id}/group")]
         public async Task<IActionResult> UpdateGroup(int id, [FromBody] int newGroupId)
         {
-            if (newGroupId < 1) newGroupId = 1;
-            if (newGroupId > 5) newGroupId = 5;
-            
             var item = await _context.RewardItems.FindAsync(id);
             if (item == null) return NotFound();
 
@@ -181,8 +215,6 @@ namespace MyMvcProject.Controllers
             else if (request.Action == "move")
             {
                 int grp = request.TargetGroupId;
-                if (grp < 1) grp = 1;
-                if (grp > 5) grp = 5;
                 foreach (var item in items)
                 {
                     item.GroupId = grp;

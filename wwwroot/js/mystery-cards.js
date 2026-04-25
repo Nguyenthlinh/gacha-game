@@ -1,10 +1,4 @@
-let GROUPS = [
-    { id: 1, name: "Quà cơ bản", probability: 50, class: "group-1" },
-    { id: 2, name: "Quà tạm ổn áp", probability: 25, class: "group-2" },
-    { id: 3, name: "Quà khá ngon à nhen", probability: 15, class: "group-3" },
-    { id: 4, name: "Quà Xịn xò", probability: 8, class: "group-4" },
-    { id: 5, name: "Siêu cấp VIP Pro Max", probability: 2, class: "group-5", isVip: true }
-];
+let GROUPS = []; // Sẽ được load từ DB
 
 let isGameActive = true;
 let trueResultItem = null;
@@ -18,11 +12,7 @@ async function initGame() {
     try {
         const groupRes = await fetch('/api/gacha/groups');
         if (groupRes.ok) {
-            const groupData = await groupRes.json();
-            groupData.forEach(gd => {
-                const grp = GROUPS.find(g => g.id === gd.id);
-                if (grp) grp.probability = gd.probability;
-            });
+            GROUPS = await groupRes.json();
         }
         const res = await fetch('/api/gacha/rewards');
         if (res.ok) {
@@ -33,6 +23,7 @@ async function initGame() {
 }
 
 function getRandomGroup() {
+    if (GROUPS.length === 0) return { id: 1, name: "Quà Nhỏ", probability: 100 };
     let rand = Math.random() * 100;
     let sum = 0;
     for (let group of GROUPS) {
@@ -83,7 +74,7 @@ function loadCards() {
             <div class="game-card" data-index="${i}" onclick="flipMysteryCard(${i})">
                 <div class="card-inner shadow-sm rounded-4">
                     <div class="card-front d-flex justify-content-center align-items-center">
-                        <span style="font-size: 3rem; font-weight: 900; color: white;">?</span>
+                        <span style="font-size: 3.5rem; font-weight: 900; color: white;">?</span>
                     </div>
                     <div class="card-back d-flex justify-content-center align-items-center bg-white" id="card-back-${i}">
                     </div>
@@ -106,18 +97,21 @@ function flipMysteryCard(index) {
     const targetCard = allCards[index];
     const cardBack = document.getElementById(`card-back-${index}`);
     
-    // CHỈ HIỆN TÊN NHÓM
+    const isVip = trueResultGroup.id === 3 || trueResultGroup.name.toUpperCase().includes('VIP');
+    const isBig = trueResultGroup.id === 2 || trueResultGroup.name.toUpperCase().includes('LỚN');
+    const badgeColor = isVip ? '#f59e0b' : (isBig ? '#10b981' : '#6b7280');
+
     cardBack.innerHTML = `
         <div class="d-flex flex-column align-items-center justify-content-center w-100 h-100 p-2">
-            <div class="badge ${trueResultGroup.class} mystery-badge">🎁 ${trueResultGroup.name}</div>
+            <div class="badge mystery-badge" style="background: ${badgeColor}; font-size: 1.1rem;">🎁 ${trueResultGroup.name}</div>
         </div>
     `;
     
-    if (trueResultGroup.isVip) {
-        cardBack.classList.add('vip-card-back', 'vip-glow');
+    if (isVip) {
+        cardBack.classList.add('vip-glow');
         SoundEngine.cardReveal();
         setTimeout(() => SoundEngine.vipWin(), 400);
-    } else if (trueResultGroup.id >= 3) {
+    } else if (isBig) {
         SoundEngine.cardReveal();
         setTimeout(() => SoundEngine.win(), 300);
     } else {
@@ -129,16 +123,15 @@ function flipMysteryCard(index) {
     document.getElementById('mainTitle').style.display = 'none';
     const resultText = document.getElementById('resultText');
     const groupReveal = document.getElementById('groupReveal');
-    groupReveal.innerHTML = `<span class="badge ${trueResultGroup.class} mystery-badge" style="font-size: 2.5rem !important;">${trueResultGroup.name}</span>`;
+    groupReveal.innerHTML = `<span class="badge mystery-badge" style="background: ${badgeColor}; font-size: 2.5rem !important;">${trueResultGroup.name}</span>`;
     resultText.classList.remove('hidden');
 
-    if (trueResultGroup.probability <= 15) {
+    if (trueResultGroup.probability <= 15 || isVip) {
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
     }
 
-    // Bắt đầu giai đoạn 2: Lật các thẻ còn lại và TỰ ĐỘNG nhận quà
     setTimeout(() => {
-        acceptCardReward(); // Tự động nhận quà
+        acceptCardReward();
         startRegretPhase();
     }, 1500);
 }
@@ -151,32 +144,33 @@ function startRegretPhase() {
     }
     remainingIndices = remainingIndices.sort(() => Math.random() - 0.5);
 
-    // Chim mồi: Đảm bảo 5 thẻ còn lại là 5 nhóm khác nhau (không trùng lặp)
-    // Bao gồm 1 thẻ VIP và 4 thẻ từ 4 nhóm còn lại
-    let fakeGroupResults = [
-        GROUPS[4], // VIP
-        GROUPS[3], // Xịn xò
-        GROUPS[2], // Khá ngon
-        GROUPS[1], // Tạm ổn
-        GROUPS[0]  // Cơ bản
-    ];
-    // Xáo trộn danh sách này
-    fakeGroupResults = fakeGroupResults.sort(() => Math.random() - 0.5);
+    // Tìm nhóm theo tên để an toàn hơn
+    const vipGrp = GROUPS.find(g => g.name.toUpperCase().includes('VIP')) || GROUPS[2] || GROUPS[0];
+    const bigGrp = GROUPS.find(g => g.name.toUpperCase().includes('LỚN')) || GROUPS[1] || GROUPS[0];
+    const smallGrp = GROUPS.find(g => g.name.toUpperCase().includes('NHỎ')) || GROUPS[0];
+
+    // Chim mồi cố định: 1 VIP, 2 Lớn, 2 Nhỏ
+    let fakeGroups = [vipGrp, bigGrp, bigGrp, smallGrp, smallGrp];
+    fakeGroups = fakeGroups.sort(() => Math.random() - 0.5);
 
     let delay = 0;
     remainingIndices.forEach((cardIndex, i) => {
         setTimeout(() => {
             const card = allCards[cardIndex];
-            const fakeGroup = fakeGroupResults[i];
+            const fakeGroup = fakeGroups[i];
             const cardBack = document.getElementById(`card-back-${cardIndex}`);
             
+            const isVip = fakeGroup === vipGrp;
+            const isBig = fakeGroup === bigGrp;
+            const badgeColor = isVip ? '#f59e0b' : (isBig ? '#10b981' : '#6b7280');
+
             cardBack.innerHTML = `
                 <div class="d-flex flex-column align-items-center justify-content-center w-100 h-100 p-1">
-                    <div class="badge ${fakeGroup.class} mystery-badge" style="font-size: 0.8rem !important; padding: 6px 10px !important;">🎁 ${fakeGroup.name}</div>
+                    <div class="badge mystery-badge" style="background: ${badgeColor}; font-size: 0.8rem !important; padding: 6px 10px !important;">🎁 ${fakeGroup.name}</div>
                 </div>
             `;
             
-            if (fakeGroup.isVip) cardBack.classList.add('vip-card-back', 'vip-glow');
+            if (isVip) cardBack.classList.add('vip-glow');
             card.classList.add('flipped', 'unselected');
             SoundEngine.cardFlip();
         }, delay);

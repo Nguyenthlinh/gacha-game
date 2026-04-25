@@ -81,19 +81,47 @@
                             <button class="btn btn-sm btn-danger rounded-pill px-3 me-2 fw-bold" onclick="bulkDelete()">🗑️ Xóa</button>
                             <div class="input-group input-group-sm" style="width: auto;">
                                 <select class="form-select" id="bulkMoveGroup" style="border-radius: 20px 0 0 20px;">
-                                    <option value="1">1. Cơ bản</option>
-                                    <option value="2">2. Tạm ổn</option>
-                                    <option value="3">3. Khá ngon</option>
-                                    <option value="4">4. Xịn xò</option>
-                                    <option value="5">5. VIP Pro</option>
+                                    <!-- Sẽ được load động -->
                                 </select>
                                 <button class="btn btn-primary fw-bold" style="border-radius: 0 20px 20px 0;" onclick="bulkMove()">➡️ Chuyển</button>
                             </div>
                         </div>
-                        
-                    <div id="groupsContainer" class="mt-2">
-                        <!-- 5 nhóm sẽ được gen bằng JS dạng tabs -->
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div id="groupsContainer" class="mt-2 flex-grow-1">
+                                <!-- Nhóm sẽ được gen bằng JS dạng tabs -->
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary ms-2 rounded-pill px-3 fw-bold" onclick="openGroupManager()">⚙️ Quản lý nhóm</button>
+                        </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Management Modal -->
+    <div class="modal fade" id="groupManagerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bubbly-panel border-0">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-primary">⚙️ Quản Lý Nhóm Quà</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="groupManagerList" class="mb-3">
+                        <!-- Danh sách nhóm để sửa/xóa -->
+                    </div>
+                    <hr>
+                    <h6 class="fw-bold">Thêm nhóm mới</h6>
+                    <div class="input-group mb-2">
+                        <input type="text" id="newGroupName" class="form-control" placeholder="Tên nhóm (VD: VIP)">
+                        <input type="color" id="newGroupColor" class="form-control form-control-color" value="#6c757d" title="Chọn màu">
+                        <button class="btn btn-success" onclick="addNewGroup()">Thêm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
                     </div>
                 </div>
             </div>

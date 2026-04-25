@@ -1,10 +1,4 @@
-let GROUPS = [
-    { id: 1, name: "Quà cơ bản", probability: 50, class: "group-1" },
-    { id: 2, name: "Quà tạm ổn áp", probability: 25, class: "group-2" },
-    { id: 3, name: "Quà khá ngon à nhen", probability: 15, class: "group-3" },
-    { id: 4, name: "Quà Xịn xò", probability: 8, class: "group-4" },
-    { id: 5, name: "Siêu cấp VIP Pro Max", probability: 2, class: "group-5", isVip: true }
-];
+let GROUPS = []; // Sẽ được load từ DB
 
 let isGameActive = true;
 let trueResultItem = null; // Tên món quà thực tế
@@ -15,19 +9,14 @@ let dbRewards = [];
 document.addEventListener('DOMContentLoaded', initGame);
 
 async function initGame() {
-    // Tải danh sách quà từ DB trước
     try {
-        // Tải danh sách nhóm (kèm xác suất mới)
+        // 1. Tải danh sách nhóm quà động
         const groupRes = await fetch('/api/gacha/groups');
         if (groupRes.ok) {
-            const groupData = await groupRes.json();
-            groupData.forEach(gd => {
-                const grp = GROUPS.find(g => g.id === gd.id);
-                if (grp) grp.probability = gd.probability;
-            });
+            GROUPS = await groupRes.json();
         }
         
-        // Tải danh sách quà
+        // 2. Tải danh sách quà
         const res = await fetch('/api/gacha/rewards');
         if (res.ok) {
             dbRewards = await res.json();
@@ -41,6 +30,8 @@ async function initGame() {
 }
 
 function getRandomGroup() {
+    if (GROUPS.length === 0) return { id: 1, name: "Quà Bí Ẩn", color: "#6c757d" };
+    
     let rand = Math.random() * 100;
     let sum = 0;
     for (let group of GROUPS) {
@@ -55,7 +46,6 @@ function getWeightedRandomItem(items) {
     
     const totalWeight = items.reduce((sum, item) => sum + (item.dropRate || 0), 0);
     if (totalWeight <= 0) {
-        // Nếu tất cả món quà đều có tỉ lệ = 0, chia đều cơ hội
         const randomIndex = Math.floor(Math.random() * items.length);
         return items[randomIndex].name;
     }
@@ -68,41 +58,13 @@ function getWeightedRandomItem(items) {
         if (rand <= currentWeight) {
             return item.name;
         }
-    }
-    return items[items.length - 1].name;
-}
-
-function getRandomItemFromGroup(groupId) {
-    // Lọc quà thuộc nhóm và còn số lượng
+    }function getRandomItemFromGroup(groupId) {
     const availableItems = dbRewards.filter(r => r.groupId === groupId && r.quantity > 0);
     if (availableItems.length > 0) {
-        // Random dựa trên Tỉ lệ rớt của từng món (đồng bộ với Gacha)
         return getWeightedRandomItem(availableItems);
     }
-    // Nếu hết quà trong nhóm, trả về tên nhóm mặc định
     const fallbackGroup = GROUPS.find(g => g.id === groupId);
-    return fallbackGroup ? fallbackGroup.name : "Quà Bí Ẩn";
-}
-
-// Cho các thẻ lừa (Giai đoạn 2), lấy ưu tiên các món chưa xuất hiện
-function getFakeItemFromGroupUnique(groupId, usedItemsSet) {
-    const allItems = dbRewards.filter(r => r.groupId === groupId);
-    
-    // Lọc những món chưa bị trùng
-    const availableItems = allItems.filter(r => !usedItemsSet.has(r.name));
-    
-    if (availableItems.length > 0) {
-        // Random mồi nhử dựa trên Tỉ lệ rớt để chân thực nhất
-        return getWeightedRandomItem(availableItems);
-    }
-    
-    // Nếu không còn món nào unique trong nhóm này, đành lấy trùng
-    if (allItems.length > 0) {
-        return getWeightedRandomItem(allItems);
-    }
-    
-    const fallbackGroup = GROUPS.find(g => g.id === groupId);
-    return fallbackGroup ? fallbackGroup.name : "Quà Xịn";
+    return fallbackGroup ? (fallbackGroup.name !== '?' ? fallbackGroup.name : "Món quà may mắn") : "Món quà may mắn";
 }
 
 function loadCards() {
@@ -122,16 +84,15 @@ function loadCards() {
 
     for (let i = 0; i < 6; i++) {
         const colDiv = document.createElement('div');
-        colDiv.className = 'col-6 col-sm-4 col-md-4'; // 2 cột ở mobile, 3 cột ở tablet+
+        colDiv.className = 'col-6 col-sm-4 col-md-4'; 
 
         colDiv.innerHTML = `
             <div class="game-card" data-index="${i}" onclick="flipMainCard(${i})">
                 <div class="card-inner shadow-sm rounded-4">
                     <div class="card-front bg-primary d-flex justify-content-center align-items-center">
-                        <span style="font-size: 3rem; font-weight: 900; color: white;">${i + 1}</span>
+                        <span style="font-size: 3.5rem; font-weight: 900; color: white;">${i + 1}</span>
                     </div>
                     <div class="card-back d-flex justify-content-center align-items-center bg-white" id="card-back-${i}">
-                        <!-- content will be injected on flip -->
                     </div>
                 </div>
             </div>
@@ -145,29 +106,30 @@ function flipMainCard(index) {
     isGameActive = false;
     selectedCardIndex = index;
 
-    // 1. Random Nhóm quà thật -> lấy tên quà thật
     trueResultGroup = getRandomGroup();
     trueResultItem = getRandomItemFromGroup(trueResultGroup.id);
 
-    // 2. Lật thẻ và show kết quả
     const allCards = document.querySelectorAll('.game-card');
     const targetCard = allCards[index];
     const cardBack = document.getElementById(`card-back-${index}`);
     
-    const badgeHtml = `<span class="badge bg-secondary mt-2 fs-6 border border-light"> ${trueResultGroup.name}</span>`;
-    
+    // Kiểm tra nhóm dựa trên tên hoặc ID cho linh hoạt
+    const isVip = trueResultGroup.id === 3 || trueResultGroup.name.toUpperCase().includes('VIP');
+    const isBig = trueResultGroup.id === 2 || trueResultGroup.name.toUpperCase().includes('LỚN');
+    const cardClass = isVip ? 'card-vip' : (isBig ? 'card-big' : 'card-small');
+    const icon = isVip ? '👑' : (isBig ? '🎁' : '🍬');
+
+    cardBack.className = `card-back d-flex flex-column align-items-center justify-content-center w-100 h-100 ${cardClass}`;
     cardBack.innerHTML = `
-        <div class="d-flex flex-column align-items-center justify-content-center w-100 h-100 p-2">
-            <p class="m-0 fw-bold text-center ${trueResultGroup.class}" style="font-size:1.5rem;">${trueResultItem}</p>
-            ${badgeHtml}
-        </div>
+        <div class="card-icon" style="font-size: 3.5rem;">${icon}</div>
+        <p class="m-0 fw-bold text-center reward-name-text" style="font-size: 1.2rem;">${trueResultItem}</p>
+        <span class="badge rounded-pill mt-2 group-badge">${trueResultGroup.name}</span>
     `;
     
-    if (trueResultGroup.isVip) {
-        cardBack.classList.add('vip-glow');
+    if (isVip) {
         SoundEngine.cardReveal();
         setTimeout(() => SoundEngine.vipWin(), 400);
-    } else if (trueResultGroup.id >= 3) {
+    } else if (isBig) {
         SoundEngine.cardReveal();
         setTimeout(() => SoundEngine.win(), 300);
     } else {
@@ -176,21 +138,17 @@ function flipMainCard(index) {
 
     targetCard.classList.add('flipped', 'shake-on-flip');
 
-    // 3. Hiển thị text lớn
     document.getElementById('mainTitle').style.display = 'none';
     const resultText = document.getElementById('resultText');
-    resultText.innerHTML = `🎉 Bạn nhận được: <span class="${trueResultGroup.class}">${trueResultItem}</span>`;
+    resultText.innerHTML = `🎉 Bạn nhận được: <span class="${cardClass}-text fw-900">${trueResultItem}</span>`;
     resultText.classList.remove('hidden');
 
-    if (trueResultGroup.probability <= 15) {
+    if (trueResultGroup.probability <= 15 || isVip) {
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
     }
 
-    // 4. Bắt đầu giai đoạn 2
     setTimeout(startRegretPhase, 1500);
 }
-
-
 
 function startRegretPhase() {
     const allCards = document.querySelectorAll('.game-card');
@@ -201,22 +159,17 @@ function startRegretPhase() {
 
     remainingIndices = remainingIndices.sort(() => Math.random() - 0.5);
 
-    let fakeGroupResults = [
-        GROUPS[4], // VIP
-        GROUPS[4], // VIP
-        GROUPS[3], // Xịn xò
-        GROUPS[2], // Khá ngon
-        GROUPS[1]  // Tạm ổn
-    ];
-    fakeGroupResults = fakeGroupResults.sort(() => Math.random() - 0.5);
+    // Tìm nhóm theo tên để an toàn hơn
+    const vipGrp = GROUPS.find(g => g.name.toUpperCase().includes('VIP')) || GROUPS[2] || GROUPS[0];
+    const bigGrp = GROUPS.find(g => g.name.toUpperCase().includes('LỚN')) || GROUPS[1] || GROUPS[0];
+    const smallGrp = GROUPS.find(g => g.name.toUpperCase().includes('NHỎ')) || GROUPS[0];
 
-    // Tính toán trước 5 thẻ mồi nhử sao cho không trùng nhau (và không trùng thẻ thật)
-    let usedItemNames = new Set([trueResultItem]);
+    let fakeGroups = [vipGrp, bigGrp, bigGrp, smallGrp, smallGrp];
+    fakeGroups = fakeGroups.sort(() => Math.random() - 0.5);
+
     let precalculatedFakeItems = [];
-
-    fakeGroupResults.forEach(fakeGroup => {
-        const fakeItemName = getFakeItemFromGroupUnique(fakeGroup.id, usedItemNames);
-        usedItemNames.add(fakeItemName);
+    fakeGroups.forEach(fakeGroup => {
+        const fakeItemName = getRandomItemFromGroup(fakeGroup.id);
         precalculatedFakeItems.push({ group: fakeGroup, name: fakeItemName });
     });
 
@@ -229,19 +182,18 @@ function startRegretPhase() {
             const fakeItemName = fakeData.name;
             
             const cardBack = document.getElementById(`card-back-${cardIndex}`);
+            const isVip = fakeGroup === vipGrp;
+            const isBig = fakeGroup === bigGrp;
             
-            const fakeBadgeHtml = `<span class="badge bg-secondary mt-1" style="font-size: 0.75rem;"> ${fakeGroup.name}</span>`;
+            const cardClass = isVip ? 'card-vip' : (isBig ? 'card-big' : 'card-small');
+            const icon = isVip ? '👑' : (isBig ? '🎁' : '🍬');
             
+            cardBack.className = `card-back d-flex flex-column align-items-center justify-content-center w-100 h-100 ${cardClass}`;
             cardBack.innerHTML = `
-                <div class="d-flex flex-column align-items-center justify-content-center w-100 h-100 p-1">
-                    <p class="m-0 fw-bold text-center ${fakeGroup.class}" style="font-size:1.2rem;">${fakeItemName}</p>
-                    ${fakeBadgeHtml}
-                </div>
+                <div class="card-icon" style="font-size: 3.5rem;">${icon}</div>
+                <p class="m-0 fw-bold text-center reward-name-text" style="font-size: 1.2rem;">${fakeItemName}</p>
+                <span class="badge rounded-pill mt-2 group-badge">${fakeGroup.name}</span>
             `;
-            
-            if (fakeGroup.isVip) {
-                cardBack.classList.add('vip-glow');
-            }
             
             card.classList.add('flipped', 'unselected');
             SoundEngine.cardFlip();

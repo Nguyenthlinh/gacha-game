@@ -1,14 +1,9 @@
-const GROUPS_INFO = [
-    { id: 1, name: "1. Quà cơ bản", class: "group-1", bg: "bg-light text-dark", badge: "Cơ bản", probability: 50 },
-    { id: 2, name: "2. Tạm ổn áp", class: "group-2", bg: "bg-success text-white bg-opacity-75", badge: "Tạm ổn", probability: 25 },
-    { id: 3, name: "3. Khá ngon à nhen", class: "group-3", bg: "bg-info text-white", badge: "Khá ngon", probability: 15 },
-    { id: 4, name: "4. Quà Xịn xò", class: "group-4", bg: "bg-primary text-white", badge: "Xịn xò", probability: 8 },
-    { id: 5, name: "5. Siêu cấp VIP Pro Max", class: "group-5", bg: "bg-danger text-white", badge: "VIP Pro", probability: 2 }
-];
-
 let selectedRewardIds = new Set();
+let allGroups = [];
+let groupManagerModal;
 
 document.addEventListener('DOMContentLoaded', () => {
+    groupManagerModal = new bootstrap.Modal(document.getElementById('groupManagerModal'));
     loadRewards();
     loadHistory();
 });
@@ -17,11 +12,12 @@ async function loadGroups() {
     try {
         const res = await fetch('/api/gacha/groups');
         if (res.ok) {
-            const data = await res.json();
-            data.forEach(d => {
-                const grp = GROUPS_INFO.find(g => g.id === d.id);
-                if (grp) grp.probability = d.probability;
-            });
+            allGroups = await res.json();
+            // Cập nhật dropdown di chuyển quà
+            const bulkSelect = document.getElementById('bulkMoveGroup');
+            if (bulkSelect) {
+                bulkSelect.innerHTML = allGroups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+            }
         }
     } catch (e) {
         console.error("Lỗi lấy group:", e);
@@ -91,14 +87,7 @@ async function bulkMove() {
     loadRewards();
 }
 
-// Màu tab cho từng nhóm
-const TAB_COLORS = ['#6c757d','#22c55e','#38bdf8','#6366f1','#ef4444'];
-const TAB_NAMES_SHORT = ['Cơ Bản','Tạm Ổn','Khá Ngon','Xịn Xò','VIP 👑'];
-
 function buildItemRow(r) {
-    const isVip  = r.groupId >= 5;
-    const isRare = r.groupId >= 4;
-    const nameColor = isVip ? 'text-danger' : isRare ? 'text-warning' : 'text-primary';
     const isChecked = selectedRewardIds.has(r.id) ? 'checked' : '';
     const outOfStock = r.quantity <= 0 ? '<span class="badge bg-secondary ms-1" style="font-size:0.6rem">Hết</span>' : '';
     return `
@@ -106,7 +95,7 @@ function buildItemRow(r) {
             <input class="form-check-input flex-shrink-0 mt-0" type="checkbox"
                 onchange="toggleSelection(${r.id}, this.checked)" ${isChecked}>
             <span class="drag-handle text-muted flex-shrink-0" style="cursor:grab;font-size:1rem;">&#9776;</span>
-            <span class="flex-grow-1 fw-bold ${nameColor}"
+            <span class="flex-grow-1 fw-bold text-primary"
                 style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.name}">
                 ${r.name}${outOfStock}
             </span>
@@ -120,7 +109,7 @@ function buildItemRow(r) {
             </div>
             <div class="d-flex align-items-center gap-1 flex-shrink-0">
                 <input type="number" min="0" step="1"
-                    class="form-control form-control-sm text-center p-1 ${isRare?'text-danger':'text-primary'}"
+                    class="form-control form-control-sm text-center p-1 text-primary"
                     style="width:54px;border-radius:8px;" value="${r.dropRate}"
                     onchange="updateRate(${r.id}, this.value)"
                     title="Tỉ lệ rớt">
@@ -138,19 +127,24 @@ async function loadRewards() {
         const rewards = await res.json();
         const container = document.getElementById('groupsContainer');
 
+        if (allGroups.length === 0) {
+            container.innerHTML = `<div class="alert alert-warning">Hãy thêm ít nhất một nhóm quà để bắt đầu.</div>`;
+            return;
+        }
+
         // ---- Build Tab Nav ----
         let tabNav = `<ul class="nav nav-pills mb-2 gap-1 flex-wrap" id="groupTabs">`;
-        GROUPS_INFO.forEach((g, idx) => {
-            const cnt = rewards.filter(r => r.groupId === g.id || (g.id === 1 && (r.groupId < 1 || r.groupId > 5))).length;
+        allGroups.forEach((g, idx) => {
+            const cnt = rewards.filter(r => r.groupId === g.id).length;
             const active = idx === 0 ? 'active' : '';
-            const color = TAB_COLORS[idx];
+            const color = g.color || '#6c757d';
             tabNav += `
                 <li class="nav-item">
                     <button class="nav-link fw-bold ${active}" id="tab-btn-${g.id}"
                         data-bs-toggle="pill" data-bs-target="#tab-pane-${g.id}"
                         style="${active ? `background:${color};color:#fff;border:2px solid ${color}` :
                                          `background:transparent;color:${color};border:2px solid ${color}`};border-radius:20px;font-size:0.85rem;padding:5px 14px;">
-                        ${TAB_NAMES_SHORT[idx]}
+                        ${g.name}
                         <span class="badge rounded-pill ms-1" style="background:rgba(0,0,0,0.15);">${cnt}</span>
                     </button>
                 </li>`;
@@ -159,14 +153,11 @@ async function loadRewards() {
 
         // ---- Build Tab Panes ----
         let tabPanes = `<div class="tab-content">`;
-        GROUPS_INFO.forEach((g, idx) => {
-            const groupRewards = rewards.filter(r =>
-                g.id === 1 ? (r.groupId === 1 || r.groupId < 1 || r.groupId > 5) : r.groupId === g.id
-            );
+        allGroups.forEach((g, idx) => {
+            const groupRewards = rewards.filter(r => r.groupId === g.id);
             const active = idx === 0 ? 'show active' : '';
-            const color = TAB_COLORS[idx];
+            const color = g.color || '#6c757d';
 
-            // Build group items
             let itemsHtml = groupRewards.length === 0
                 ? `<div class="text-center text-muted py-4 rounded-3 border border-dashed my-2">
                     <div style="font-size:1.5rem;">&#x1F381;</div>
@@ -177,7 +168,6 @@ async function loadRewards() {
             tabPanes += `
                 <div class="tab-pane fade ${active}" id="tab-pane-${g.id}" role="tabpanel">
                     <div class="border rounded-3 overflow-hidden">
-                        <!-- Group Header -->
                         <div class="d-flex justify-content-between align-items-center px-3 py-2"
                             style="background:${color};color:#fff;">
                             <span class="fw-bold fs-6">${g.name} &nbsp;&middot;&nbsp;
@@ -193,8 +183,6 @@ async function loadRewards() {
                                 <span style="font-size:0.8rem;">%</span>
                             </div>
                         </div>
-
-                        <!-- Column headers -->
                         <div class="d-flex align-items-center gap-2 px-3 py-1 bg-light"
                             style="font-size:0.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.04em;">
                             <span style="width:16px;"></span>
@@ -206,8 +194,6 @@ async function loadRewards() {
                             <span style="width:10px;"></span>
                             <span style="width:28px;"></span>
                         </div>
-
-                        <!-- Item list -->
                         <div id="group-list-${g.id}" data-group-id="${g.id}"
                             class="px-2 py-2" style="min-height:60px;">
                             ${itemsHtml}
@@ -220,9 +206,8 @@ async function loadRewards() {
         container.innerHTML = tabNav + tabPanes;
         updateBulkToolbar();
 
-        // ---- Init Sortable ----
         if (window.Sortable) {
-            GROUPS_INFO.forEach(g => {
+            allGroups.forEach(g => {
                 const listEl = document.getElementById(`group-list-${g.id}`);
                 Sortable.create(listEl, {
                     group: 'shared',
@@ -241,10 +226,12 @@ async function loadRewards() {
                             });
                         }
                         const allIds = [];
-                        GROUPS_INFO.forEach(gi => {
-                            document.getElementById(`group-list-${gi.id}`)
-                                .querySelectorAll('[data-id]')
-                                .forEach(el => allIds.push(parseInt(el.getAttribute('data-id'))));
+                        allGroups.forEach(gi => {
+                            const list = document.getElementById(`group-list-${gi.id}`);
+                            if (list) {
+                                list.querySelectorAll('[data-id]')
+                                    .forEach(el => allIds.push(parseInt(el.getAttribute('data-id'))));
+                            }
                         });
                         await fetch('/api/gacha/rewards/reorder', {
                             method: 'POST',
@@ -275,34 +262,29 @@ async function addBulkRewards() {
         if (line.trim() === '') return;
         
         let name = line.trim();
-        let grp = 1; 
+        let grp = allGroups.length > 0 ? allGroups[0].id : 1; 
         let qty = 10; 
         let rate = 10; 
         
         if (line.includes(':')) {
             const parts = line.split(':');
             name = parts[0].trim();
-            if (parts.length === 2) {
-                let val = parseInt(parts[1]) || 1;
-                if (val > 5) {
-                    qty = val;
-                    grp = 1;
-                } else {
-                    grp = val;
+            if (parts.length >= 2) {
+                // Thử tìm nhóm theo số thứ tự (1, 2, 3...) hoặc theo ID
+                let groupInput = parseInt(parts[1]);
+                if (!isNaN(groupInput)) {
+                    // Nếu người dùng nhập 1, 2, 3... thì lấy nhóm tương ứng
+                    if (groupInput >= 1 && groupInput <= allGroups.length) {
+                        grp = allGroups[groupInput - 1].id;
+                    } else {
+                        grp = groupInput; // Nếu không thì dùng ID trực tiếp
+                    }
                 }
-            } else if (parts.length === 3) {
-                grp = parseInt(parts[1]) || 1;
-                qty = parseInt(parts[2]) || 10;
-            } else if (parts.length >= 4) {
-                grp = parseInt(parts[1]) || 1;
-                qty = parseInt(parts[2]) || 10;
-                rate = parseFloat(parts[3]) || 10;
             }
+            if (parts.length >= 3) qty = parseInt(parts[2]) || 10;
+            if (parts.length >= 4) rate = parseFloat(parts[3]) || 10;
         }
         
-        if (grp < 1) grp = 1;
-        if (grp > 5) grp = 5;
-
         if (name) {
             items.push({ name: name, quantity: qty, groupId: grp, dropRate: rate });
         }
@@ -373,6 +355,7 @@ async function updateQuantity(id, newQty) {
 
 async function loadHistory() {
     const tbody = document.getElementById('historyList');
+    if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="3" class="text-center">Đang tải...</td></tr>';
     try {
         const res = await fetch('/api/history');
@@ -405,4 +388,57 @@ async function clearHistory() {
         await fetch('/api/history/clear', { method: 'DELETE' });
         loadHistory();
     }
+}
+
+// ----- Group Management Functions -----
+
+function openGroupManager() {
+    renderGroupManagerList();
+    groupManagerModal.show();
+}
+
+function renderGroupManagerList() {
+    const list = document.getElementById('groupManagerList');
+    list.innerHTML = allGroups.map(g => `
+        <div class="d-flex align-items-center gap-2 mb-2 p-2 border rounded shadow-sm">
+            <input type="text" class="form-control form-control-sm" value="${g.name}" onchange="updateGroupInfo(${g.id}, 'name', this.value)">
+            <input type="color" class="form-control form-control-color" value="${g.color || '#6c757d'}" onchange="updateGroupInfo(${g.id}, 'color', this.value)">
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteGroup(${g.id})">🗑️</button>
+        </div>
+    `).join('');
+}
+
+async function addNewGroup() {
+    const name = document.getElementById('newGroupName').value;
+    const color = document.getElementById('newGroupColor').value;
+    if (!name.trim()) return alert("Hãy nhập tên nhóm!");
+
+    await fetch('/api/gacha/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, color, probability: 0 })
+    });
+    document.getElementById('newGroupName').value = '';
+    loadRewards();
+    renderGroupManagerList();
+}
+
+async function deleteGroup(id) {
+    if (!confirm("Xóa nhóm này? Toàn bộ quà trong nhóm sẽ được chuyển về nhóm đầu tiên.")) return;
+    await fetch(`/api/gacha/groups/${id}`, { method: 'DELETE' });
+    loadRewards();
+    renderGroupManagerList();
+}
+
+async function updateGroupInfo(id, field, value) {
+    const group = allGroups.find(g => g.id === id);
+    if (!group) return;
+    group[field] = value;
+
+    await fetch(`/api/gacha/groups/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(group)
+    });
+    loadRewards();
 }

@@ -92,40 +92,43 @@ async function rollGacha() {
     }, 1400);
 }
 
-function revealResult(reward) {
+async function revealResult(reward) {
     const machine = document.getElementById('gachaMachine');
     const slot = document.getElementById('gachaSlot');
     const result = document.getElementById('rewardResult');
     const nameEl = document.getElementById('rewardName');
+
+    // Lấy thông tin nhóm động để lấy màu sắc
+    let groupColor = '#3b82f6';
+    let groupName = 'Phần quà';
+    try {
+        const gRes = await fetch('/api/gacha/groups');
+        if (gRes.ok) {
+            const groups = await gRes.json();
+            const myGroup = groups.find(g => g.id === reward.groupId);
+            if (myGroup) {
+                groupColor = myGroup.color || groupColor;
+                groupName = myGroup.name;
+            }
+        }
+    } catch(e) {}
 
     slot.classList.add('hidden');
     machine.classList.remove('machine-spinning');
     machine.classList.add('machine-reveal');
 
     currentRewardName = reward.name;
-
-    const isVip = reward.groupId >= 5;
-    const isRare = reward.groupId >= 4;
-
-    if (isVip) {
-        nameEl.className = 'reward-name-vip reward-name-pop';
-        nameEl.innerHTML = `<div style="font-size:1.8rem">👑</div>${reward.name}<br><span class="badge bg-danger mt-1">VIP Pro Max!</span>`;
-        SoundEngine.vipWin();
-    } else if (isRare) {
-        nameEl.className = 'reward-name-rare reward-name-pop';
-        nameEl.innerHTML = `<div style="font-size:1.8rem">🌟</div>${reward.name}<br><span class="badge bg-warning text-dark mt-1">Xịn Xò!</span>`;
-        SoundEngine.win();
-    } else {
-        nameEl.className = 'reward-name-normal reward-name-pop';
-        nameEl.innerHTML = reward.name;
-        SoundEngine.win();
-    }
+    
+    // Hiển thị tên quà với màu của nhóm
+    nameEl.innerHTML = `<div style="font-size:1.5rem">🎁</div>${reward.name}<br><span class="badge mt-1" style="background:${groupColor}">${groupName}</span>`;
+    nameEl.style.color = groupColor;
+    nameEl.className = 'reward-name-pop fw-bold';
 
     result.classList.remove('hidden');
     document.getElementById('rollBtn').classList.add('hidden');
     document.getElementById('confirmPanel').classList.remove('hidden');
 
-    fireConfetti(isVip);
+    fireConfetti(reward.dropRate <= 5);
     isRolling = false;
 
     setTimeout(() => machine.classList.remove('machine-reveal'), 1000);
